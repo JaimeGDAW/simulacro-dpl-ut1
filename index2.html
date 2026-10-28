@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Simulacro DPL UT1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 780px); each question sits under a terminal-style status strip */
+:root{
+  --bg:#edf2f3; --surface:#ffffff; --surface-2:#f5f8f9; --ink:#14222a; --muted:#56676f; --line:#d2dcdf;
+  --accent:#0b6a6a; --accent-soft:#d8ebe9; --accent-ink:#ffffff;
+  --ok:#1b7745; --ok-soft:#dcf0e3; --bad:#b0392d; --bad-soft:#f7e0dc; --blank:#86620f; --blank-soft:#f4ead0;
+  --code:#e4ecee; --shadow:0 1px 2px rgba(20,34,42,.06),0 4px 14px rgba(20,34,42,.05);
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1518; --surface:#141f24; --surface-2:#19262c; --ink:#e1e9eb; --muted:#93a5ac; --line:#26363d;
+    --accent:#47b9af; --accent-soft:#163331; --accent-ink:#04201e;
+    --ok:#56c98e; --ok-soft:#133023; --bad:#f17b6f; --bad-soft:#3a1d1a; --blank:#e3b650; --blank-soft:#33290f;
+    --code:#1c2a30; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1518; --surface:#141f24; --surface-2:#19262c; --ink:#e1e9eb; --muted:#93a5ac; --line:#26363d;
+  --accent:#47b9af; --accent-soft:#163331; --accent-ink:#04201e;
+  --ok:#56c98e; --ok-soft:#133023; --bad:#f17b6f; --bad-soft:#3a1d1a; --blank:#e3b650; --blank-soft:#33290f;
+  --code:#1c2a30; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code);padding:.08em .35em;border-radius:5px;overflow-wrap:anywhere}
+pre{margin:.6em 0 .2em;background:var(--code);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:var(--f-mono);font-size:.82rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+
+/* header */
+.top{display:flex;flex-direction:column;gap:6px;margin-bottom:22px}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.9rem,5.5vw,2.6rem);line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
+h1 .slash{color:var(--accent)}
+.sub{color:var(--muted);margin:0;max-width:62ch}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.15rem;margin:0;letter-spacing:-.01em}
+
+/* generic blocks */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.hint{font-size:.88rem;color:var(--muted);margin:0}
+
+/* scoring rule */
+.rule{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rule div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.rule b{font-family:var(--f-mono);font-size:1.25rem;font-weight:600;font-variant-numeric:tabular-nums}
+.rule span{font-size:.85rem;color:var(--muted)}
+.rule .r-ok b{color:var(--ok)} .rule .r-bad b{color:var(--bad)} .rule .r-bl b{color:var(--blank)}
+.ev{font-size:.88rem;color:var(--muted);margin:10px 0 0}
+.ev strong{color:var(--ink)}
+
+/* segmented + chips */
+.seg,.chips{position:relative}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.seg input,.chips input{position:absolute;opacity:0;pointer-events:none}
+.seg label{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);cursor:pointer;min-width:0}
+.seg label b{font-weight:700}
+.seg label span{font-size:.82rem;color:var(--muted)}
+.seg input:checked+label{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.seg input:focus-visible+label,.chips input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.seg input:disabled+label{opacity:.5;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--surface-2);cursor:pointer;font-size:.9rem}
+.chips label small{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.chips input:checked+label{border-color:var(--accent);background:var(--accent-soft)}
+.chips input:checked+label::before{content:"✓";color:var(--accent);font-weight:700}
+.linkbtn{background:none;border:0;padding:2px 4px;color:var(--accent);font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);padding:10px 16px;font-weight:700;min-height:44px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent}
+.btn.warn{border-color:var(--bad);color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.big{padding:14px 22px;font-size:1.05rem}
+.spacer{flex:1}
+
+/* quiz */
+.status{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);margin-bottom:8px}
+.status .prompt{color:var(--accent);font-weight:600}
+.status .ce{border:1px solid var(--line);border-radius:999px;padding:1px 9px;background:var(--surface)}
+.status .net{color:var(--ink)}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s ease}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.qtext{font-size:1.12rem;line-height:1.5;margin:0 0 16px;font-weight:700}
+.qtext pre{font-weight:400}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:12px 14px;line-height:1.45;transition:border-color .12s,background .12s}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .key{flex:none;width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:600;font-size:.85rem;border:1px solid var(--line);background:var(--surface)}
+.opt .txt{min-width:0;padding-top:2px}
+.opt.is-sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.is-sel .key{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt.is-ok{border-color:var(--ok);background:var(--ok-soft)}
+.opt.is-ok .key{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.opt.is-bad{border-color:var(--bad);background:var(--bad-soft)}
+.opt.is-bad .key{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.opt.is-dim{opacity:.6}
+.opt:disabled{cursor:default}
+.feedback{margin-top:14px;border-radius:10px;padding:12px 14px;border:1px solid var(--line);background:var(--surface-2)}
+.feedback.ok{border-color:var(--ok);background:var(--ok-soft)}
+.feedback.bad{border-color:var(--bad);background:var(--bad-soft)}
+.feedback.bl{border-color:var(--blank);background:var(--blank-soft)}
+.feedback b{display:block;margin-bottom:2px}
+.feedback p{margin:0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.keys{font-size:.78rem;color:var(--muted);margin-top:12px;font-family:var(--f-mono)}
+.confirm{margin-top:14px;border:1px solid var(--bad);background:var(--bad-soft);border-radius:10px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.confirm p{margin:0;flex:1 1 220px}
+details.map{margin-top:16px}
+details.map summary{cursor:pointer;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px;margin-top:10px}
+.grid button{height:36px;border-radius:7px;border:1px solid var(--line);background:var(--surface);font-family:var(--f-mono);font-size:.78rem;font-variant-numeric:tabular-nums}
+.grid button.done{background:var(--accent-soft);border-color:var(--accent)}
+.grid button.cur{outline:2px solid var(--ink);outline-offset:1px}
+
+/* results */
+.score{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+.nota{font-family:var(--f-display);font-weight:800;font-size:clamp(3rem,13vw,4.6rem);line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.nota small{font-size:.35em;color:var(--muted);font-weight:500;letter-spacing:0}
+.verdict{font-family:var(--f-mono);font-size:.82rem;display:inline-block;border-radius:6px;padding:2px 8px;margin-bottom:6px}
+.verdict.pass{background:var(--ok-soft);color:var(--ok)}
+.verdict.fail{background:var(--bad-soft);color:var(--bad)}
+.tally{display:flex;flex-wrap:wrap;gap:4px 16px;font-variant-numeric:tabular-nums}
+.tally span b{font-family:var(--f-mono)}
+.c-ok{color:var(--ok)} .c-bad{color:var(--bad)} .c-bl{color:var(--blank)}
+.topics{width:100%;border-collapse:collapse;font-size:.9rem}
+.topics th{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
+.topics td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle;font-variant-numeric:tabular-nums}
+.topics td.num{font-family:var(--f-mono);white-space:nowrap;text-align:right}
+.tbar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--line);min-width:80px}
+.tbar i{display:block;height:100%}
+.tbar .o{background:var(--ok)} .tbar .b{background:var(--bad)} .tbar .w{background:var(--blank)}
+.tablewrap{overflow-x:auto}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.85rem}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rv{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.rv.k-ok{border-left-color:var(--ok)} .rv.k-bad{border-left-color:var(--bad)} .rv.k-bl{border-left-color:var(--blank)}
+.rv-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-family:var(--f-mono);font-size:.74rem;color:var(--muted);margin-bottom:6px}
+.rv-h .tag{border-radius:5px;padding:1px 7px;font-weight:600}
+.k-ok .tag{background:var(--ok-soft);color:var(--ok)} .k-bad .tag{background:var(--bad-soft);color:var(--bad)} .k-bl .tag{background:var(--blank-soft);color:var(--blank)}
+.rv-q{font-weight:700;margin:0 0 8px}
+.rv-a{margin:0;font-size:.92rem;display:flex;flex-direction:column;gap:4px}
+.rv-a .mine{color:var(--bad)}
+.rv-a .right{color:var(--ok)}
+.rv-e{margin:8px 0 0;font-size:.9rem;color:var(--muted)}
+.hist{display:flex;flex-direction:column;gap:0;font-size:.88rem}
+.hist div{display:flex;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.hist div:last-child{border-bottom:0}
+.hist .n{margin-left:auto;font-family:var(--f-mono);font-weight:600}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+@media (max-width:560px){
+  .seg{grid-template-columns:1fr}
+  .rule b{font-size:1.05rem}
+  .score{grid-template-columns:1fr;gap:8px}
+  .qcard{padding:16px}
+  .qtext{font-size:1.04rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">DPL · 2.º CFGS DAW · RA1 · CIFP Zonzamas</span>
+    <h1>Simulacro <span class="slash">/</span> UT1</h1>
+    <p class="sub">Implantación de arquitecturas web, prácticas de Telnet/SSH y HTTP/HTTPS, el viaje de un paquete y certificados digitales.</p>
+  </header>
+  <main id="view" aria-live="polite"></main>
+</div>
+<script>
+var QB = []; var PATCH = {};
+QB.push(
+/* ===== ARQUITECTURAS (CE a, h) ===== */
+["arq","¿Qué es una arquitectura web?",["La organización de los componentes de una aplicación y de cómo se comunican","El lenguaje de programación con el que se escribe el backend","El diseño visual de la interfaz de la aplicación","El conjunto de servidores físicos de un centro de datos"],"Describe qué piezas forman la aplicación y cómo se hablan entre ellas."],
+["arq","¿En qué consiste implantar (desplegar) una aplicación?",["En conseguir que se ejecute correctamente en el entorno donde se va a usar","En escribir el código y sus pruebas unitarias","En diseñar la interfaz de usuario","En compilar el código sin errores"],"Implantar = preparar el entorno, instalar y configurar, poner en marcha, comprobar y documentar."],
+["arq","Una implantación es reproducible cuando…",["otra persona puede repetirla siguiendo la documentación y obtener un entorno equivalente","funciona en el ordenador del desarrollador","se ha hecho una sola vez sin errores","solo la persona que la hizo sabe cómo arrancarla"],"Si solo funciona porque «tú sabes qué tocar», está improvisada, no implantada."],
+["arq","¿Qué pregunta responde la fase de desarrollo, frente a la de implantación?",["¿Hace lo que debe?","¿Funciona aquí, para todos?","¿Sé repetirlo en otro servidor?","¿Está documentado?"],"Desarrollo: ¿hace lo que debe? · Implantación: ¿funciona aquí, para todos, y sé repetirlo?"],
+["arq","Una app copiada al servidor falla con «Cannot find module 'express'». ¿Qué tipo de fallo es?",["De implantación: no se instalaron las dependencias","De programación: el código tiene un error","De red: el puerto está cerrado","De hardware: falta memoria"],"El código es correcto; faltó ejecutar npm install en el servidor."],
+["arq","¿Qué componente traduce un nombre de dominio a una dirección IP?",["El DNS","La CDN","El balanceador de carga","El servidor de aplicaciones"],"DNS: www.ejemplo.es → 203.0.113.10."],
+["arq","¿Qué componente ejecuta la lógica de negocio y expone la API?",["El servidor de aplicaciones","El servidor web","El DNS","La CDN"],"Node.js, PHP-FPM o Tomcat son servidores de aplicaciones."],
+["arq","¿Qué componente guarda la información de forma persistente?",["La base de datos","La caché","El balanceador","El servidor web"],"PostgreSQL, MySQL, MongoDB…"],
+["arq","¿Para qué sirve un balanceador de carga?",["Para repartir el tráfico entre varios servidores","Para traducir nombres a IP","Para guardar datos de forma persistente","Para cifrar las conexiones"],"Reparte la carga; Nginx también puede hacerlo."],
+["arq","¿Para qué sirve una CDN?",["Para servir copias de los recursos desde ubicaciones cercanas al usuario","Para ejecutar la lógica de la aplicación","Para resolver nombres de dominio","Para almacenar la base de datos"],"Acelera la entrega acercando las copias al usuario."],
+["arq","¿Cuál de estos es un ejemplo de servidor web?",["Nginx","Node.js","PostgreSQL","Redis"],"Nginx y Apache son servidores web; Node.js es un runtime de aplicaciones."],
+["arq","¿Cuál de estos es un ejemplo de cliente?",["Un navegador","Nginx","Tomcat","PostgreSQL"],"Navegador, app móvil o curl."],
+["arq","En el modelo cliente-servidor de HTTP, ¿quién inicia la comunicación?",["El cliente","El servidor","El DNS","Cualquiera de los dos"],"El cliente envía la petición y el servidor responde."],
+["arq","¿Qué caracteriza a una arquitectura monolítica?",["Toda la aplicación se construye y se despliega como una sola unidad","Cada funcionalidad es un servicio independiente","El frontend consume una API que devuelve JSON","Cada capa se instala en una máquina distinta"],"Interfaz, lógica y acceso a datos en un único despliegue."],
+["arq","¿Cuál es una ventaja del monolito?",["Es sencillo de desarrollar, probar y desplegar al principio","Permite escalar cada parte por separado","Una misma API sirve a web y móvil","Aísla los fallos de cada servicio"],"Su sencillez inicial es su mayor ventaja."],
+["arq","¿Cuál es un inconveniente del monolito?",["Un cambio pequeño obliga a desplegarlo todo","Es difícil de desarrollar al principio","Requiere un API gateway","Necesita versionar la API"],"Además, es difícil escalar por partes."],
+["arq","En la arquitectura de tres capas, ¿cuáles son las capas?",["Presentación, lógica de negocio y datos","Cliente, red y servidor","Frontend, API y CDN","Aplicación, transporte y red"],"Cada capa solo habla con la contigua."],
+["arq","¿Qué ventaja tiene la arquitectura de tres capas?",["Responsabilidades claras: se puede cambiar una capa sin tocar las demás","Se despliega como una sola unidad","No necesita base de datos","Tiene menos componentes que instalar"],"Su inconveniente: más componentes que instalar y comunicar."],
+["arq","En el modelo cliente + API, ¿qué devuelve normalmente el backend?",["Datos, normalmente en JSON","Páginas HTML completas","Imágenes y hojas de estilo","Ficheros ejecutables"],"El frontend se descarga una vez y consume los endpoints."],
+["arq","¿Cuál es la principal ventaja del modelo cliente + API?",["La misma API puede servir a la web y a la app móvil","Se despliega como una sola unidad","No necesita autenticación","No necesita servidor web"],"Varios clientes consumen los mismos endpoints."],
+["arq","¿Qué inconveniente tiene el modelo cliente + API?",["Hay que versionar la API y cuidar CORS y la autenticación","Obliga a desplegarlo todo ante cualquier cambio","No permite usar JSON","No se puede usar desde móviles"],"Exponer una API a varios clientes exige gestionar versiones, CORS y autenticación."],
+["arq","¿Qué caracteriza a los microservicios?",["La aplicación se divide en servicios pequeños e independientes, cada uno con su despliegue","Toda la aplicación es un único bloque","Hay exactamente tres capas","El cliente accede directamente a la base de datos"],"A menudo cada servicio tiene su propia base de datos."],
+["arq","¿Cuál es la principal ventaja de los microservicios?",["Cada servicio se escala y actualiza por separado","Son sencillos de operar","Necesitan pocos componentes","No requieren monitorización"],"El precio es una gran complejidad operativa."],
+["arq","¿Cuál es el principal inconveniente de los microservicios?",["Mucha complejidad operativa: redes, monitorización y fallos parciales","No se pueden escalar","Un cambio obliga a desplegarlo todo","Solo admiten una base de datos"],"Más piezas que vigilar y comunicar."],
+["arq","¿Qué pieza dirige las peticiones al microservicio adecuado?",["El API gateway","El hipervisor","El DNS","La CDN"],"Es la puerta de entrada de la arquitectura de microservicios."],
+["arq","Una aplicación tendrá web y app móvil usando los mismos datos. ¿Qué modelo es más razonable?",["Cliente + API","Web estática","Monolito sin API","Microservicios"],"Dos clientes distintos consumen los mismos datos."],
+["arq","Web informativa de una academia, con poco tráfico y un solo desarrollador. ¿Qué modelo elegirías?",["Monolito o web estática","Microservicios","Cliente + API con gateway","Tres capas con varias bases de datos"],"Microservicios para una web de cinco páginas sería una mala decisión."],
+["arq","Tienda online con picos de tráfico en catálogo y pagos. ¿Qué modelo es más adecuado?",["Microservicios (o monolito modular)","Web estática","Monolito clásico","Cliente + API sin backend"],"Permite escalar catálogo y pagos de forma independiente."],
+["arq","Intranet de un ayuntamiento con datos sensibles. ¿Qué modelo es razonable?",["Tres capas","Web estática","Serverless","Monolito sin base de datos"],"Separar los datos de la presentación facilita la seguridad."],
+["arq","¿Cuál es la mejor arquitectura web?",["Depende de los requisitos, el tamaño, el equipo, el presupuesto y la seguridad","Siempre los microservicios","Siempre el monolito","Siempre cliente + API"],"No hay una arquitectura «mejor» en general."]
+);
+QB.push(
+/* ===== RED Y HTTP (CE b) ===== */
+["red","¿En qué orden están las capas de la comunicación web, de arriba abajo?",["Aplicación → Transporte → Red → Enlace","Enlace → Red → Transporte → Aplicación","Aplicación → Red → Transporte → Enlace","Transporte → Aplicación → Red → Enlace"],"HTTP → TCP → IP → Ethernet/Wi-Fi."],
+["red","¿Qué protocolo trabaja en la capa de aplicación?",["HTTP","TCP","IP","Ethernet"],"TCP es transporte, IP red y Ethernet enlace."],
+["red","¿Qué protocolo se encarga de la entrega fiable y ordenada mediante puertos?",["TCP","IP","HTTP","DNS"],"TCP es la capa de transporte."],
+["red","¿Qué puerto usa HTTP por defecto?",["80","443","22","8080"],"HTTP: 80 · HTTPS: 443."],
+["red","¿Qué puerto usa HTTPS por defecto?",["443","80","22","3000"],"443/tcp para HTTP/1.1 y HTTP/2; 443/udp para HTTP/3."],
+["red","¿Qué puerto usa SSH?",["22","23","21","443"],"22/tcp para administración remota."],
+["red","¿Qué puerto usa PostgreSQL por defecto?",["5432","3306","8080","27017"],"3306 es MySQL/MariaDB."],
+["red","¿Qué puerto usa MySQL/MariaDB por defecto?",["3306","5432","3000","8080"],"5432 es PostgreSQL."],
+["red","¿Sobre qué protocolo de transporte funciona HTTP/3?",["QUIC sobre UDP","TCP","TCP con TLS 1.2","ICMP"],"Por eso necesita abrir 443/udp."],
+["red","¿Qué aporta HTTP/2 frente a HTTP/1.1?",["Varias peticiones a la vez por una misma conexión (multiplexación)","Funcionar sobre UDP","Mensajes en texto legible","Nuevos métodos HTTP"],"Además usa formato binario en frames."],
+["red","¿Qué versión de HTTP envía los mensajes en texto legible?",["HTTP/1.1","HTTP/2","HTTP/3","Ninguna"],"Por eso es la mejor para aprender con Wireshark y curl -v."],
+["red","¿Qué cambia entre las versiones de HTTP?",["El formato en que viajan los mensajes, no su semántica","Los métodos disponibles","Los códigos de estado","Las cabeceras permitidas"],"Métodos, cabeceras y códigos son los mismos."],
+["red","¿Qué ocurre primero al escribir una URL con https:// en el navegador?",["Una consulta DNS para obtener la IP","La negociación TLS","El envío de la petición GET","El cierre de la conexión TCP"],"Orden: DNS → TCP → TLS → HTTP."],
+["red","¿Cuál es el orden correcto al acceder a una web HTTPS?",["DNS → TCP → TLS → HTTP","TCP → DNS → HTTP → TLS","TLS → TCP → DNS → HTTP","DNS → TLS → TCP → HTTP"],"Primero el nombre, luego la conexión, luego el cifrado y por último la petición."],
+["red","¿Qué parte de una URL no se envía al servidor?",["El fragmento (#…)","Los parámetros (?…)","La ruta","El host"],"El fragmento solo lo usa el navegador."],
+["red","En una URL, ¿qué es lo que va detrás de «?»?",["Los parámetros","El fragmento","La ruta","El puerto"],"Ejemplo: ?dia=lunes."],
+["red","¿Qué cabecera es obligatoria en una petición HTTP/1.1?",["Host","User-Agent","Accept","Cookie"],"Indica qué sitio se pide."],
+["red","¿Para qué sirve la cabecera Host?",["Para indicar qué sitio se pide, lo que permite alojar varios sitios en una IP","Para indicar la IP del cliente","Para indicar el tamaño del cuerpo","Para guardar una cookie"],"Nginx la compara con server_name."],
+["red","¿Qué contiene la línea de petición HTTP?",["Método, ruta y versión","Versión, código y texto","Host y User-Agent","Cuerpo y cabeceras"],"Ejemplo: GET / HTTP/1.1."],
+["red","¿Qué contiene la línea de estado de una respuesta HTTP?",["Versión, código de estado y texto","Método, ruta y versión","Host y puerto","Content-Type y Content-Length"],"Ejemplo: HTTP/1.1 200 OK."],
+["red","¿Qué separa las cabeceras del cuerpo en un mensaje HTTP?",["Una línea en blanco","Un punto y coma","La cabecera Content-Length","El código de estado"],"Siempre hay una línea vacía entre ambos."],
+["red","¿Qué método HTTP se usa para obtener un recurso sin modificar nada?",["GET","POST","PUT","DELETE"],"GET no debe modificar nada."],
+["red","¿Qué método HTTP se usa para enviar datos y crear algo nuevo?",["POST","GET","HEAD","DELETE"],"Por ejemplo, un formulario o una reserva."],
+["red","¿Qué hace el método HEAD?",["Lo mismo que GET pero devolviendo solo las cabeceras","Borra un recurso","Crea un recurso","Modifica parte de un recurso"],"Es lo que usa curl -I."],
+["red","¿Qué método se usa para borrar un recurso?",["DELETE","PUT","PATCH","POST"],"DELETE borra; PUT sustituye; PATCH modifica parcialmente."],
+["red","¿Qué diferencia hay entre PUT y PATCH?",["PUT sustituye el recurso y PATCH lo modifica parcialmente","PUT borra y PATCH crea","PUT obtiene y PATCH envía","No hay diferencia"],"Ambos actualizan, de forma completa o parcial."],
+["red","¿Qué indica la cabecera Content-Type?",["El tipo de contenido del cuerpo","El tamaño del cuerpo","El sitio solicitado","Adónde redirigir"],"Ejemplo: text/html o application/json."],
+["red","¿Qué indica la cabecera Content-Length?",["El tamaño del cuerpo en bytes","El tipo de contenido","El tiempo de caché","La versión de HTTP"],"Tamaño del cuerpo de la respuesta."],
+["red","¿Qué cabecera indica adónde redirigir en una respuesta 301 o 302?",["Location","Host","Referer","Server"],"Acompaña a las redirecciones."],
+["red","¿Con qué cabecera guarda el servidor un dato en el navegador?",["Set-Cookie","Cookie","Cache-Control","Authorization"],"El navegador lo devuelve después en la cabecera Cookie."],
+["red","¿Qué indica la cabecera Cache-Control?",["Si la respuesta se puede guardar en caché y durante cuánto tiempo","El tipo de contenido","El servidor que responde","La IP del cliente"],"Controla el cacheo."],
+["red","¿Qué significa el código 200?",["OK: la petición ha ido bien","Recurso creado","Redirección permanente","No encontrado"],"Familia 2xx: éxito."],
+["red","¿Qué significa el código 201?",["Recurso creado","OK","Sin contenido","No modificado"],"Típico tras un POST correcto."],
+["red","¿Qué significa el código 301?",["Redirección permanente","Redirección temporal","No modificado","Prohibido"],"302 es temporal."],
+["red","¿Qué significa el código 304?",["No modificado: el cliente puede usar su copia en caché","Redirección permanente","Recurso creado","Error del servidor"],"Ahorra volver a descargar el recurso."],
+["red","¿Qué significa el código 403?",["Prohibido","No encontrado","No autorizado","Error interno"],"El servidor encuentra el recurso pero no lo sirve."],
+["red","¿Qué significa el código 404?",["El recurso no existe","Acceso prohibido","Error del servidor","Redirección"],"Not Found."],
+["red","¿Qué indica la familia de códigos 4xx?",["Error del cliente","Error del servidor","Redirección","Éxito"],"400, 401, 403, 404…"],
+["red","¿Qué indica la familia de códigos 5xx?",["Error del servidor","Error del cliente","Redirección","Respuesta informativa"],"500, 502, 503, 504…"],
+["red","¿Qué indica la familia de códigos 3xx?",["Redirección","Éxito","Error del cliente","Error del servidor"],"301, 302, 304."],
+["red","¿Qué es HTTPS?",["HTTP viajando dentro de un túnel TLS","Un protocolo distinto que sustituye a HTTP","HTTP sobre UDP","HTTP con contraseña"],"HTTPS = HTTP + TLS."],
+["red","¿Qué tres garantías aporta TLS?",["Confidencialidad, integridad y autenticación del servidor","Rapidez, compresión y caché","Disponibilidad, anonimato y balanceo","Integridad, compresión y anonimato"],"Nadie puede leer, alterar sin que se note ni suplantar al servidor."],
+["red","En la salida de curl -v, ¿qué indican las líneas que empiezan por «>»?",["Lo que envía el cliente","Lo que responde el servidor","Mensajes de error","Información de la conexión"],"«<» es la respuesta y «*» información de curl."],
+["red","¿Qué es un endpoint?",["Una URL concreta de una API, como GET /api/saludo","Un servidor de base de datos","El último router del camino","Un fichero de configuración de Nginx"],"Cada ruta de la API es un endpoint."]
+);
+QB.push(
+/* ===== SERVIDORES WEB Y DE APLICACIONES (CE b, c, d) ===== */
+["srv","¿Cuáles son las dos funciones básicas de un servidor web?",["Servir contenido estático y actuar como proxy inverso","Ejecutar la lógica y guardar datos","Resolver nombres y asignar IP","Compilar y desplegar código"],"Sirve ficheros del disco o reenvía la petición a una aplicación."],
+["srv","¿Qué es un proxy inverso?",["Un servidor que recibe las peticiones y las reenvía a servidores internos","Un servidor que traduce nombres a IP","Un programa que cifra el disco","Un cliente que navega de forma anónima"],"Nginx delante de Node.js actúa como proxy inverso."],
+["srv","¿Cómo es el modelo interno de Nginx?",["Asíncrono por eventos: pocos workers atienden muchas conexiones","Un proceso por cada conexión","Un único proceso para todo","Un hilo por cada usuario"],"Por eso consume poca memoria."],
+["srv","¿Cómo trabaja internamente Apache HTTP Server?",["Por procesos o hilos (módulos MPM)","Por eventos con workers únicamente","Con un único proceso","Con contenedores"],"MPM prefork, worker o event."],
+["srv","¿Qué característica es propia de Apache?",["Los ficheros .htaccess de configuración por carpeta","Los bloques server y location","La configuración en /etc/nginx/","El proceso master con workers"],"Apache usa VirtualHost y .htaccess."],
+["srv","¿Cuál es un punto fuerte de Nginx?",["Servir estáticos y hacer de proxy inverso con poco consumo de memoria","Ejecutar código JavaScript","Usar ficheros .htaccess","Guardar datos persistentes"],"También balanceo y caché."],
+["srv","En Nginx, ¿qué hace el proceso master?",["Lee la configuración y abre los puertos","Atiende todas las conexiones","Ejecuta la aplicación","Guarda los logs de acceso"],"Los workers son los que atienden las conexiones."],
+["srv","¿Con qué usuario se ejecutan los workers de Nginx en Ubuntu?",["www-data","root","nginx-admin","nobody"],"El master se ejecuta como root."],
+["srv","¿Qué comando instala Nginx en Ubuntu?",["sudo apt install nginx","sudo npm install nginx","sudo docker install nginx","sudo systemctl install nginx"],"Antes conviene hacer sudo apt update."],
+["srv","En systemctl status nginx, ¿qué significa «enabled»?",["Que arrancará automáticamente con el sistema","Que está en marcha ahora mismo","Que la configuración es correcta","Que está instalado"],"«active (running)» indica que está en marcha."],
+["srv","¿Dónde está la configuración de Nginx?",["/etc/nginx/","/var/www/html/","/var/log/nginx/","/opt/nginx/"],"nginx.conf, sites-available, sites-enabled…"],
+["srv","¿Dónde guarda Nginx sus logs?",["/var/log/nginx/","/etc/nginx/logs/","/var/www/logs/","/home/nginx/"],"access.log y error.log."],
+["srv","¿Cuál es la carpeta raíz del sitio por defecto de Nginx?",["/var/www/html/","/etc/nginx/html/","/usr/share/nginx/","/var/log/nginx/"],"Ahí está la página «Welcome to nginx!»."],
+["srv","¿Qué contiene la carpeta sites-available?",["Un fichero por cada sitio, esté activo o no","Solo los sitios activos","Los logs de cada sitio","Los certificados"],"Los activos se enlazan en sites-enabled."],
+["srv","¿Qué contiene la carpeta sites-enabled?",["Enlaces simbólicos a los sitios activos","Todos los sitios","Los ficheros HTML","Los logs"],"Se activan con ln -s."],
+["srv","¿Cómo se activa un sitio de Nginx en Ubuntu?",["Creando un enlace simbólico en sites-enabled","Copiándolo a /var/www/html","Reiniciando el equipo","Ejecutando npm start"],"sudo ln -s /etc/nginx/sites-available/miweb /etc/nginx/sites-enabled/"],
+["srv","En un bloque server de Nginx, ¿qué indica la directiva listen?",["El puerto en el que escucha","La carpeta del sitio","El nombre del sitio","El fichero por defecto"],"Ejemplo: listen 80;"],
+["srv","¿Qué indica la directiva root?",["La carpeta con los ficheros del sitio","El usuario administrador","El puerto de escucha","El nombre del dominio"],"Ejemplo: root /var/www/miweb;"],
+["srv","¿Qué indica la directiva index?",["El fichero que se entrega por defecto en cada carpeta","La carpeta del sitio","El nombre del servidor","El puerto"],"Ejemplo: index index.html;"],
+["srv","¿Qué indica la directiva server_name?",["El nombre al que responde el sitio (se compara con la cabecera Host)","El nombre del proceso de Nginx","El hostname del sistema","El usuario de los workers"],"Permite alojar varios sitios en una IP."],
+["srv","¿Qué hace try_files $uri $uri/ =404?",["Busca el fichero o la carpeta pedidos y, si no existen, devuelve 404","Reenvía la petición a la aplicación","Devuelve siempre 404","Guarda la petición en el log"],"Es la configuración típica de un sitio estático."],
+["srv","Si varios sitios comparten IP y ninguno coincide con la cabecera Host, ¿quién responde?",["El sitio marcado como default_server","Ninguno","El último sitio creado","El primero por orden alfabético"],"Es el sitio por defecto."],
+["srv","¿Qué comando comprueba la sintaxis de la configuración de Nginx?",["sudo nginx -t","sudo nginx -s","sudo systemctl check nginx","sudo nginx --syntax"],"-T además muestra toda la configuración cargada."],
+["srv","¿Qué hace sudo nginx -T?",["Comprueba la sintaxis y muestra la configuración completa","Detiene Nginx","Recarga la configuración","Muestra los logs"],"T mayúscula: test + volcado."],
+["srv","Tras modificar un sitio de Nginx, ¿qué haces y en qué orden?",["nginx -t y después systemctl reload nginx","systemctl reload nginx y después nginx -t","systemctl stop nginx y después nginx -t","Solo systemctl restart nginx"],"Si la sintaxis falla, el servidor que funcionaba sigue funcionando."],
+["srv","¿Qué diferencia hay entre reload y restart?",["reload aplica cambios sin cortar conexiones; restart para y arranca cortándolas","reload para el servicio y restart lo arranca","No hay diferencia","restart solo comprueba la sintaxis"],"En producción se prefiere reload."],
+["srv","¿Qué hace systemctl enable nginx?",["Hace que Nginx arranque automáticamente al iniciar el sistema","Arranca Nginx ahora mismo","Comprueba la configuración","Instala Nginx"],"start arranca ahora; enable, en cada inicio."],
+["srv","No hay DNS para miweb.local. ¿Qué fichero del cliente editas para resolverlo?",["/etc/hosts","/etc/nginx/nginx.conf","/etc/resolv.conf del servidor","/var/www/html/index.html"],"Se añade la línea: IP nombre."],
+["srv","¿Qué es un servidor de aplicaciones?",["El entorno donde se ejecuta el código del backend","Un servidor que solo entrega ficheros","Un servidor de nombres","Un gestor de bases de datos"],"Ejecuta la lógica: consultar datos, comprobar usuarios…"],
+["srv","¿Qué es Node.js?",["Un runtime que ejecuta JavaScript fuera del navegador","Un servidor web como Nginx","Un framework de CSS","Un gestor de bases de datos"],"Permite crear servidores HTTP con poco código."],
+["srv","¿Qué es npm?",["El gestor de paquetes de Node.js","Un servidor web","Un framework de rutas","Un runtime de JavaScript"],"Descarga las librerías del proyecto."],
+["srv","¿Qué es Express?",["Un framework de Node.js para crear servidores y APIs","Un gestor de paquetes","Un servidor web en C","Una base de datos"],"Es el framework más extendido de Node.js."],
+["srv","¿Qué servidor de aplicaciones se usa con PHP junto a Nginx?",["PHP-FPM","Tomcat","Kestrel","Gunicorn"],"Nginx le pasa las peticiones por FastCGI."],
+["srv","¿Qué servidor de aplicaciones se asocia a Java?",["Apache Tomcat","PHP-FPM","Gunicorn","Kestrel"],"También WildFly o Spring Boot; suele escuchar en el 8080."],
+["srv","¿Qué servidor de aplicaciones se asocia a Python?",["Gunicorn o Uvicorn","Tomcat","Kestrel","PHP-FPM"],"Para Django, Flask o FastAPI."],
+["srv","¿Qué crea el comando npm init -y?",["El fichero package.json","La carpeta node_modules","El fichero .env","El Dockerfile"],"Después npm install descarga las dependencias."],
+["srv","¿Dónde descarga npm install las librerías?",["En la carpeta node_modules","En package.json","En /etc/node/","En /var/www/"],"node_modules se genera y no se sube a Git."],
+["srv","¿Qué significa const PORT = process.env.PORT || 3000?",["Usa la variable de entorno PORT y, si no existe, el 3000","Usa siempre el puerto 3000","Lee el puerto de package.json","Suma PORT y 3000"],"La configuración llega del entorno."],
+["srv","¿Qué implica que la app escuche en 127.0.0.1?",["Que solo acepta conexiones desde la propia máquina","Que acepta conexiones desde cualquier red","Que solo escucha en IPv6","Que está apagada"],"Es lo deseable cuando Nginx está delante."],
+["srv","¿Qué significa que un servicio escuche en 0.0.0.0?",["Que escucha en todas las interfaces y es accesible desde fuera","Que solo es accesible localmente","Que no escucha en ningún puerto","Que solo acepta IPv6"],"0.0.0.0:80 = puerto 80 en todas las interfaces."],
+["srv","¿Para qué se crea una unidad de systemd para la aplicación Node.js?",["Para que arranque sola con el sistema y se reinicie si falla","Para comprobar la sintaxis de Nginx","Para abrir el puerto en el cortafuegos","Para instalar dependencias"],"Así la app es un servicio, igual que Nginx."],
+["srv","En una unidad de systemd, ¿qué hace Restart=on-failure?",["Vuelve a levantar el proceso si se cae","Reinicia el servidor completo","Reinicia la app cada hora","Desactiva el arranque automático"],"Recuperación automática."],
+["srv","¿Por qué la unidad de systemd usa un usuario sin privilegios (User=miapp)?",["Para no ejecutar la aplicación como root","Para poder usar el puerto 80","Porque Node.js no funciona como root","Para que Nginx lea el código"],"Principio de mínimo privilegio."],
+["srv","Tras crear un fichero .service nuevo, ¿qué comando hace que systemd lo lea?",["sudo systemctl daemon-reload","sudo systemctl reload nginx","sudo nginx -t","sudo systemctl status"],"Después: systemctl enable --now miapp."],
+["srv","¿Qué comando muestra los mensajes de una app gestionada por systemd?",["journalctl -u miapp","docker logs miapp","nginx -T","ss -lntp"],"-n 5 muestra los últimos 5."],
+["srv","¿Qué directiva de Nginx reenvía las peticiones a la aplicación?",["proxy_pass","root","try_files","server_name"],"proxy_pass http://127.0.0.1:3000;"],
+["srv","¿Por qué se pone Nginx delante de Node.js?",["Para terminar TLS, servir estáticos, limitar accesos o repartir tráfico","Porque Node.js no puede escuchar en puertos","Porque Node.js no entiende HTTP","Para ejecutar PHP"],"Nginx recibe y enruta; Node ejecuta; la BD guarda."],
+["srv","¿Qué cabecera usa el proxy para indicar a la app la IP real del cliente?",["X-Real-IP","Host","Content-Type","Location"],"También X-Forwarded-For."],
+["srv","¿Qué indica la cabecera X-Forwarded-Proto?",["Si la petición original llegó por HTTP o HTTPS","La IP del cliente","El nombre del sitio","El tamaño de la respuesta"],"Útil cuando Nginx termina TLS."],
+["srv","¿Para qué sirve un bloque location /static/ con alias en el proxy?",["Para que Nginx sirva los estáticos directamente sin pasar por la app","Para reenviar los estáticos a Node.js","Para bloquear la carpeta static","Para cachear la API"],"Nginx es muy rápido sirviendo ficheros."],
+["srv","Nginx devuelve 502 Bad Gateway al hacer de proxy. ¿Qué significa?",["Nginx funciona, pero no puede conectar con la aplicación","Nginx tiene un error de sintaxis","El recurso no existe","El cliente no tiene permisos"],"Revisa systemctl status miapp y journalctl."],
+["srv","¿Qué indica un 504 Gateway Timeout?",["La aplicación existe pero tarda demasiado en responder","La aplicación no está arrancada","El recurso no existe","Falta un punto y coma en Nginx"],"502: no conecta · 504: no contesta a tiempo."]
+);
+QB.push(
+/* ===== VIRTUALIZACIÓN, DOCKER Y NUBE (CE e) ===== */
+["vir","¿Qué es una máquina virtual?",["Un ordenador simulado por software con su propio sistema operativo invitado","Un proceso aislado que comparte el kernel","Un servidor físico en la nube","Una imagen de Docker"],"Se ejecuta sobre un hipervisor."],
+["vir","¿Qué es un hipervisor?",["El software que crea y ejecuta máquinas virtuales","Un motor de contenedores","Un servidor web","Un gestor de paquetes"],"Reparte CPU, memoria, disco y red entre las VM."],
+["vir","¿Qué caracteriza a un hipervisor de tipo 1?",["Se ejecuta directamente sobre el hardware","Se instala sobre un sistema operativo anfitrión","Solo ejecuta contenedores","Solo funciona en portátiles"],"También llamado «bare metal»; se usa en centros de datos."],
+["vir","¿Cuál es un hipervisor de tipo 1?",["VMware ESXi","VirtualBox","VMware Workstation","Docker"],"También Proxmox VE/KVM o Hyper-V."],
+["vir","¿Cuál es un hipervisor de tipo 2?",["VirtualBox","VMware ESXi","Proxmox VE","Hyper-V Server"],"Se instala sobre Windows, Linux o macOS."],
+["vir","¿Cuál es una ventaja de las máquinas virtuales?",["Permiten instantáneas para volver a un estado anterior","Arrancan en un segundo","Ocupan solo unos megas","Comparten el kernel del anfitrión"],"Además aíslan del equipo real."],
+["vir","¿Cuál es un inconveniente de las máquinas virtuales?",["Cada VM reserva RAM y disco para un sistema completo","No aíslan del anfitrión","No permiten instantáneas","Solo funcionan con Linux"],"También arrancan lento."],
+["vir","¿Qué modo de red de VirtualBox da Internet a la VM pero no permite conectarse a ella desde fuera?",["NAT","Adaptador puente","Solo anfitrión","Red interna"],"Salvo que se configure reenvío de puertos."],
+["vir","¿Qué modo de red pone la VM en la red física con su propia IP?",["Adaptador puente","NAT","Solo anfitrión","Red interna"],"La VM aparece como un equipo más."],
+["vir","¿Qué modo de red crea una red privada entre el anfitrión y las VM, sin Internet?",["Solo anfitrión","NAT","Adaptador puente","Red NAT"],"Por defecto 192.168.56.0/24."],
+["vir","¿Qué modo de red comunica solo las VM entre sí?",["Red interna","Solo anfitrión","NAT","Adaptador puente"],"Sirve para simular una red aislada."],
+["vir","¿Qué modo es como NAT pero permite que varias VM se vean entre sí?",["Red NAT","Red interna","Adaptador puente","Solo anfitrión"],"Útil para laboratorios con varios servidores."],
+["vir","¿Qué es un contenedor?",["Un proceso aislado con sus dependencias que comparte el kernel del anfitrión","Un ordenador virtual con su propio sistema operativo","Un servidor físico","Un fichero de configuración"],"Por eso arranca en segundos."],
+["vir","¿Cuál es la principal diferencia entre un contenedor y una VM?",["El contenedor comparte el kernel del anfitrión; la VM lleva su propio SO","La VM es más ligera que el contenedor","El contenedor aísla más que la VM","No hay diferencia"],"Contenedor: megas y segundos · VM: gigas y minutos."],
+["vir","¿Qué ofrece un aislamiento más fuerte?",["La máquina virtual","El contenedor","Los dos por igual","Ninguno"],"La VM aísla a nivel de máquina; el contenedor, a nivel de proceso."],
+["vir","¿Qué es una imagen de Docker?",["Una plantilla de solo lectura a partir de la que se crean contenedores","Un contenedor en ejecución","Un volumen de datos","Un registro de imágenes"],"Se identifica como nombre:etiqueta, p. ej. nginx:alpine."],
+["vir","¿Qué es un Dockerfile?",["Un fichero con las instrucciones para construir una imagen","Un contenedor en marcha","El registro de imágenes","El fichero que levanta varios servicios"],"FROM, COPY, RUN, CMD…"],
+["vir","¿Qué es un registro de Docker, como Docker Hub?",["Un servidor que almacena imágenes","Un fichero de logs","Un contenedor especial","Un volumen compartido"],"Se usan pull y push."],
+["vir","¿Para qué sirve un volumen en Docker?",["Para guardar datos que sobreviven al contenedor","Para publicar puertos","Para construir imágenes","Para limitar la CPU"],"Bases de datos, ficheros subidos…"],
+["vir","¿Qué comando construye una imagen a partir de un Dockerfile?",["docker build","docker run","docker pull","docker exec"],"docker build -t miapp:1.0 ."],
+["vir","¿Qué comando crea y arranca un contenedor a partir de una imagen?",["docker run","docker build","docker push","docker inspect"],"docker run -d --name web1 -p 8080:80 nginx:alpine"],
+["vir","¿Qué significa -p 8080:80 en docker run?",["Puerto 8080 del anfitrión hacia el 80 del contenedor","Puerto 8080 del contenedor hacia el 80 del anfitrión","Del puerto 80 al 8080 en el contenedor","Límite de 80 MB de memoria"],"Se lee «anfitrión : contenedor»."],
+["vir","¿Qué hace la opción -d en docker run?",["Ejecuta el contenedor en segundo plano","Borra el contenedor al pararlo","Activa la depuración","Descarga la imagen"],"--name le pone nombre."],
+["vir","¿Qué comando lista los contenedores en marcha?",["docker ps","docker image ls","docker logs","docker inspect"],"docker ps -a muestra también los parados."],
+["vir","¿Qué comando muestra la salida (logs) de un contenedor?",["docker logs","docker ps","docker stats","docker build"],"docker logs -f sigue la salida en directo."],
+["vir","¿Qué comando abre un terminal dentro de un contenedor en marcha?",["docker exec -it miapp sh","docker run -it miapp","docker logs miapp","docker attach -p miapp"],"exec ejecuta un comando en un contenedor que ya está en marcha."],
+["vir","En un Dockerfile, ¿qué indica FROM?",["La imagen base","El comando de arranque","El directorio de trabajo","El usuario"],"Ejemplo: FROM node:22-alpine."],
+["vir","En un Dockerfile, ¿qué diferencia hay entre RUN y CMD?",["RUN se ejecuta al construir la imagen; CMD al arrancar el contenedor","RUN al arrancar; CMD al construir","Son equivalentes","CMD instala dependencias"],"RUN npm ci · CMD [\"node\", \"app.js\"]."],
+["vir","¿Para qué sirve el fichero .dockerignore?",["Para no copiar a la imagen ficheros como node_modules, .env o .git","Para ignorar errores al construir","Para ocultar el contenedor","Para no publicar puertos"],"Imagen limpia y sin secretos."],
+["vir","¿Por qué la app debe escuchar en 0.0.0.0 dentro de un contenedor?",["Porque 127.0.0.1 sería el propio contenedor y no se podría acceder desde fuera","Porque Docker prohíbe 127.0.0.1","Por seguridad","Para usar IPv6"],"En la VM detrás de Nginx, en cambio, se usa 127.0.0.1."],
+["vir","¿Para qué sirve USER node en el Dockerfile?",["Para no ejecutar la aplicación como root","Para instalar Node.js","Para iniciar sesión en Docker Hub","Para crear un usuario en el anfitrión"],"Mismo principio que en systemd."],
+["vir","¿Qué riesgo tiene añadir tu usuario al grupo docker?",["Equivale en la práctica a tener permisos de root","Ninguno","Impide usar sudo","Borra las imágenes"],"Hazlo solo en la VM de laboratorio."],
+["vir","¿Para qué sirve Docker Compose?",["Para describir y levantar varios contenedores con un solo fichero","Para construir una única imagen","Para gestionar máquinas virtuales","Para publicar imágenes"],"Se describe en compose.yaml."],
+["vir","¿Qué comando levanta todos los servicios de Docker Compose en segundo plano?",["docker compose up -d","docker compose ps","docker compose down","docker compose logs"],"down los para y elimina."],
+["vir","En Docker Compose, ¿cómo se comunica Nginx con el servicio app?",["Por el nombre del servicio, por ejemplo http://app:3000","Por 127.0.0.1","Por la IP del anfitrión","No se pueden comunicar"],"Compose crea una red con DNS interno."],
+["vir","¿Qué es la nube?",["Un modelo en el que se alquilan recursos informáticos bajo demanda y pagando por uso","Una tecnología concreta de virtualización","Un tipo de servidor web","Un sistema operativo"],"Lo que cambia entre modelos es qué gestionas tú."],
+["vir","En IaaS, ¿qué te proporciona el proveedor?",["Máquinas virtuales, redes y discos","La aplicación terminada","Solo la ejecución de funciones","Una plataforma que ejecuta tu código sin gestionar el SO"],"Tú instalas y mantienes el SO, Nginx, Node…"],
+["vir","¿Cuál es un ejemplo de IaaS?",["Amazon EC2","Gmail","AWS Lambda","Azure App Service"],"También Azure Virtual Machines o Google Compute Engine."],
+["vir","En PaaS, ¿qué haces tú?",["Subir el código y configurarlo","Instalar y parchear el sistema operativo","Montar el hardware","Nada, solo usar la aplicación"],"El proveedor gestiona el SO y el runtime."],
+["vir","¿Cuál es un ejemplo de PaaS?",["Azure App Service","Amazon EC2","Microsoft 365","VirtualBox"],"También Google App Engine o AWS Elastic Beanstalk."],
+["vir","¿Qué caracteriza al modelo serverless (FaaS)?",["Ejecuta funciones ante eventos, se paga por ejecución y escala a cero","Te da máquinas virtuales completas","Es una aplicación terminada","Necesita gestionar servidores"],"Ejemplos: AWS Lambda, Azure Functions."],
+["vir","¿Cuál es un ejemplo de SaaS?",["Gmail","Amazon EC2","Azure Functions","Google App Engine"],"SaaS es la aplicación terminada que simplemente usas."],
+["vir","¿En qué modelo de nube tienes más control y también más trabajo de operación?",["IaaS","PaaS","Serverless","SaaS"],"IaaS te deja configurarlo todo, pero tienes que parchear el sistema."],
+["vir","En una VM de la nube, ¿qué puertos deben estar abiertos a cualquier origen?",["80 y 443","22 y 3000","3000 y 5432","Todos"],"22 solo a tu IP; 3000 y 5432 solo internos."]
+);
+QB.push(
+/* ===== ESTRUCTURA, CONFIGURACIÓN Y REQUISITOS (CE g, h) ===== */
+["app","¿Qué es un recurso estático?",["Un fichero que se entrega tal cual está en el disco, igual para todos","Una respuesta generada en el momento consultando datos","Una consulta a la base de datos","Un endpoint de la API"],"Ejemplos: logo.png, estilos.css."],
+["app","¿Qué es un recurso dinámico?",["Una respuesta que se genera en el momento y cambia según el usuario o la hora","Un fichero CSS","Una imagen del disco","Un fichero HTML fijo"],"Ejemplo: /api/reservas?dia=lunes."],
+["app","¿Cuál de estos recursos es dinámico?",["/api/reservas?dia=lunes","/static/css/estilos.css","/static/img/logo.png","/index.html"],"Lo genera el servidor de aplicaciones."],
+["app","¿Quién debería servir idealmente los recursos estáticos?",["Nginx o una CDN","El servidor de aplicaciones","La base de datos","El DNS"],"Son muy rápidos sirviendo ficheros."],
+["app","¿Quién produce los recursos dinámicos?",["El servidor de aplicaciones","El servidor web sirviendo ficheros","La CDN","El navegador"],"Node.js, PHP, Java…"],
+["app","¿Para qué sirve el fichero package.json?",["Para declarar las dependencias del proyecto","Para guardar los secretos","Para configurar Nginx","Para guardar los logs"],"package-lock.json fija las versiones exactas."],
+["app","¿Para qué sirve package-lock.json?",["Para fijar las versiones exactas de las dependencias","Para guardar contraseñas","Para describir los contenedores","Para documentar el despliegue"],"Así la instalación es reproducible."],
+["app","¿Se sube la carpeta node_modules a Git?",["No, se genera al instalar las dependencias","Sí, siempre","Solo en producción","Solo si es pequeña"],"Va en el .gitignore."],
+["app","¿Qué fichero NO debe subirse nunca a Git?",[".env",".env.example","package.json","README.md"],".env contiene los secretos reales."],
+["app","¿Qué se sube a Git en lugar del fichero .env?",[".env.example con valores de ejemplo",".env cifrado","Nada","El .env con las contraseñas cambiadas"],"Cada entorno tiene su propio .env real."],
+["app","¿Por qué no se suben secretos a Git, ni siquiera a un repositorio privado?",["Porque el historial de Git los conserva para siempre","Porque Git no admite ficheros ocultos","Porque ocupan mucho","Porque Node no los lee"],"Borrarlos después no los elimina del historial."],
+["app","¿Por qué la configuración se guarda en variables de entorno y no en el código?",["Porque el código es el mismo en todos los entornos y solo cambia la configuración","Porque es más rápido","Porque así se cifra","Porque el código no puede leer ficheros"],"Un único código, una configuración por entorno."],
+["app","¿Qué es una variable de entorno?",["Configuración que se pasa al proceso desde fuera del código","Una constante dentro del código","Una columna de la base de datos","Un parámetro de la URL"],"Ejemplo: PORT=3000."],
+["app","¿Dónde se guardan los secretos en entornos profesionales?",["En gestores de secretos como Vault o Docker secrets","En el README","En comentarios del código","En el .env.example"],"Más seguro que un .env suelto."],
+["app","¿Qué recurso de la aplicación sirve para el diagnóstico?",["Los logs","La documentación","El frontend","Las dependencias"],"Registros de la app y del servidor."],
+["app","¿Qué recurso de la aplicación garantiza la reproducibilidad?",["La documentación","Los logs","La base de datos","El frontend"],"README, diagramas, manuales."],
+["app","¿Qué recurso aporta la persistencia de la información?",["Los datos (base de datos y ficheros subidos)","Los logs","Las dependencias","La configuración"],"SQL, NoSQL, ficheros."],
+["app","¿Por qué hay que analizar los requisitos antes de desplegar?",["Para no tener que repetir la implantación varias veces","Porque lo exige la ley","Para elegir el color de la web","Para escribir menos código"],"Instalar sin conocer los requisitos lleva a repetir el trabajo."],
+["app","«¿Cuánta CPU, RAM y disco necesita?» es un requisito de…",["Hardware","Software","Red","Operación"],"También cuánto crecerán los datos."],
+["app","«¿Qué runtime, versión y servidor web usa?» es un requisito de…",["Software","Hardware","Datos","Seguridad"],"Node 22, PHP 8.4, Nginx…"],
+["app","«¿Qué IP, dominio y puertos usa? ¿Hay cortafuegos?» es un requisito de…",["Red","Software","Funcional","Datos"],"Área de red."],
+["app","«¿Qué base de datos usa y cómo se hacen las copias de seguridad?» es un requisito de…",["Datos","Hardware","Red","Funcional"],"Área de datos."],
+["app","«¿Usa HTTPS? ¿Qué usuarios y permisos? ¿Dónde están los secretos?» es un requisito de…",["Seguridad","Operación","Software","Funcional"],"Área de seguridad."],
+["app","«¿Cómo se arranca, se actualiza y se recupera tras un fallo?» es un requisito de…",["Operación","Funcional","Hardware","Documentación"],"Área de operación."],
+["app","«¿Qué debe hacer la aplicación y cuántos usuarios tendrá?» es un requisito…",["Funcional","De red","De hardware","De operación"],"También el horario de disponibilidad."],
+["app","¿Cuál es el orden de las primeras etapas del código a producción?",["Código → Dependencias → Build → Tests → Empaquetado → Despliegue","Despliegue → Build → Código → Tests","Tests → Código → Build → Despliegue","Código → Despliegue → Tests → Build"],"Después vienen configuración, pruebas y observabilidad."],
+["app","¿Qué entorno es una copia fiel de producción?",["Preproducción","Desarrollo","Pruebas","Local"],"Desarrollo → Pruebas → Preproducción → Producción."],
+["app","¿En qué entorno están los usuarios reales?",["Producción","Preproducción","Pruebas","Desarrollo"],"Es el último entorno."],
+["app","¿Por qué «desplegar es copiar los ficheros por FTP» es un mito?",["Porque sin instalar dependencias, configurar y probar, la copia no está desplegada","Porque FTP está prohibido","Porque siempre hay que usar Docker","Porque desplegar es compilar"],"Copiar es solo una etapa."],
+["app","¿Por qué «si compila, ya está» es un mito?",["Porque compilar no demuestra que funcione en el servidor con sus datos y su red","Porque JavaScript no compila","Porque hay que compilar dos veces","Porque compilar incluye las pruebas"],"Hay que probar en el entorno real."],
+["app","¿Qué significa CI/CD?",["Integración y despliegue continuos: probar, empaquetar y desplegar automáticamente","Control de imágenes y contenedores Docker","Configuración inicial y copia diaria","Cliente integrado y datos centralizados"],"Se verá en la UT6."]
+);
+QB.push(
+/* ===== PRUEBAS, DIAGNÓSTICO, SEGURIDAD Y DOCUMENTACIÓN (CE f, h, i) ===== */
+["pru","¿Cuál es el orden del método de diagnóstico de la unidad?",["Instalado → iniciado → escuchando → configurado → accesible → probado","Probado → accesible → configurado → iniciado","Escuchando → instalado → iniciado → probado","Configurado → instalado → accesible → probado"],"Como una escalera: si un peldaño falla, no se mira el siguiente."],
+["pru","¿Qué comando comprueba si un servicio está en marcha?",["systemctl status","ss -lntp","ping","nginx -t"],"Peldaño «iniciado»."],
+["pru","¿Qué comando muestra los puertos en los que hay programas escuchando?",["sudo ss -lntp","systemctl status","ping","curl -I"],"Peldaño «escuchando»."],
+["pru","¿Qué comando comprueba si llegas por red hasta la máquina?",["ping","ss -lntp","nginx -t","journalctl"],"Peldaño «accesible»."],
+["pru","¿Qué comando de curl muestra solo las cabeceras de la respuesta?",["curl -I","curl -v","curl -k","curl -o"],"-I usa el método HEAD."],
+["pru","¿Qué hace curl -v?",["Muestra la conversación completa: petición, respuesta y conexión","Muestra solo el cuerpo","Desactiva TLS","Muestra solo las cabeceras"],"Modo detallado (verbose)."],
+["pru","curl devuelve «Could not resolve host». ¿Qué ocurre?",["No se puede traducir el nombre a IP","Nada escucha en el puerto","Un cortafuegos bloquea","La app ha fallado"],"Revisa el DNS o el /etc/hosts del cliente."],
+["pru","curl devuelve «Connection refused». ¿Qué ocurre?",["Se llega a la máquina, pero nada escucha en ese puerto","El nombre no se resuelve","El cortafuegos descarta los paquetes","La app tarda demasiado"],"¿El servicio está parado? Revisa ss -lntp."],
+["pru","curl devuelve «Connection timed out». ¿Qué es lo más probable?",["Un cortafuegos, una IP equivocada o el adaptador de red de la VM","Nada escucha en el puerto","El fichero no existe","Error de sintaxis en Nginx"],"No hay respuesta: algo descarta los paquetes."],
+["pru","Nginx responde 403 Forbidden. ¿Qué revisas?",["Los permisos de los ficheros o que falte el index.html","El DNS","Que la app esté arrancada","El puerto de proxy_pass"],"Encuentra la ruta pero no puede o no debe servirla."],
+["pru","Nginx responde 404 Not Found. ¿Qué revisas?",["root o alias y el nombre del fichero","Los permisos de Docker","El cortafuegos","La contraseña de la base de datos"],"El recurso no está donde Nginx lo busca."],
+["pru","La aplicación responde 500 Internal Server Error. ¿Dónde miras?",["En los logs de la app (journalctl -u miapp o docker logs)","En el /etc/hosts del cliente","En el cortafuegos","En sites-enabled"],"La aplicación ha fallado al procesar la petición."],
+["pru","Nginx no arranca: «Address already in use» en el puerto 80. ¿Por qué?",["Otro programa, por ejemplo Apache, ya ocupa el puerto 80","Falta un punto y coma","El usuario no está en el grupo docker","El DNS no funciona"],"Compruébalo con sudo ss -lntp | grep :80."],
+["pru","nginx -t muestra «unexpected }». ¿Qué suele faltar?",["Un punto y coma en esa línea o en la anterior","Un certificado","Un usuario","Un puerto libre"],"Error de sintaxis."],
+["pru","«permission denied … Docker daemon socket». ¿Qué ocurre?",["Tu usuario no puede usar Docker: hay que añadirlo al grupo docker","El contenedor no existe","El puerto está ocupado","La imagen está corrupta"],"Después hay que volver a iniciar sesión."],
+["pru","Desde el anfitrión da timeout, pero dentro de la VM curl localhost devuelve 200. ¿Qué revisas?",["El cortafuegos de la VM (ufw)","La sintaxis de Nginx","Que la app esté arrancada","El fichero index.html"],"El servicio funciona; algo filtra el tráfico entrante."],
+["pru","¿Cuáles son los tres mecanismos de observabilidad?",["Logs, métricas y health checks","Logs, copias y snapshots","Ping, curl y ss","Tests, build y despliegue"],"Qué ha pasado, cuánto y si está lista."],
+["pru","¿Qué es un health check?",["Una ruta como /health que indica si la aplicación está lista para atender","Un antivirus","Una copia de seguridad","Un test unitario"],"Lo comprueban el balanceador, Docker o un monitor."],
+["pru","¿Qué debe responder un health check si la app no puede conectar con la base de datos?",["503","200","301","404"],"Encendido no es lo mismo que preparado."],
+["pru","¿Qué herramientas dan métricas de consumo de CPU y memoria?",["htop y docker stats","tail y grep","ping y curl","nginx -t y nginx -T"],"Métricas = cuánto."],
+["pru","¿Qué comando muestra en directo las peticiones que llegan a Nginx?",["sudo tail -f /var/log/nginx/access.log","sudo nginx -T","sudo ss -lntp","sudo ufw status"],"tail -f sigue el fichero."],
+["pru","¿Cuál es la regla básica de seguridad en la implantación?",["Exponer únicamente lo necesario","Abrir todos los puertos","Ejecutar todo como root","Desactivar el cortafuegos"],"Superficie de exposición mínima."],
+["pru","¿Qué es la superficie de exposición?",["El conjunto de servicios y puertos accesibles desde fuera","El tamaño del disco","El número de usuarios","El espacio de la base de datos"],"Hay que reducirla al mínimo."],
+["pru","¿Qué puertos no deberían ser accesibles desde Internet?",["El 3000 de Node.js y el 5432 de PostgreSQL","El 80 y el 443","El 443","El 80"],"Deben escuchar en 127.0.0.1 o en la red interna."],
+["pru","¿Qué abre sudo ufw allow 'Nginx Full'?",["Los puertos 80 y 443","Solo el 80","Solo el 443","El 22"],"SSH se permite con ufw allow OpenSSH."],
+["pru","¿Por qué hay que tener cuidado con Docker y ufw?",["Docker abre los puertos publicados aunque ufw diga lo contrario","Docker desactiva ufw","ufw borra los contenedores","No hay ningún problema"],"Docker modifica iptables directamente."],
+["pru","¿Qué comando revisa vulnerabilidades conocidas en las dependencias de Node.js?",["npm audit","npm ci","npm init","npm start"],"Hay que mantener actualizado el sistema y las dependencias."],
+["pru","¿Cuándo está bien hecha la documentación de una implantación?",["Cuando otra persona puede reproducir la instalación sin preguntarte nada","Cuando es muy larga","Cuando tiene muchas capturas","Cuando la lee el profesor"],"Principio de la documentación."],
+["pru","¿Dónde debe guardarse la documentación de la implantación?",["En el repositorio (README.md, docs/), versionada con Git","En el escritorio del servidor","En el .env","En un correo"],"Evoluciona a la vez que la aplicación."],
+["pru","¿Qué debe contener el README de un despliegue?",["Arquitectura, requisitos, instalación, configuración, pruebas y problemas conocidos","Solo el código fuente","Las contraseñas de acceso","Solo el nombre del autor"],"Con comandos copiables y resultados esperados."],
+["pru","¿Cuándo hay que anotar las evidencias de una práctica?",["Mientras se hace, no al final","Al terminar, de memoria","Solo si algo falla","Nunca"],"Comando, salida y qué demuestra."]
+);
+QB.push(
+/* ===== PRÁCTICA 1: TELNET, WIRESHARK, SSH ===== */
+["ssh","¿Qué son «cliente» y «servidor»?",["Papeles que hacen los programas, no tipos de máquina","Dos tipos de ordenador","Sinónimos de anfitrión y VM","Dos sistemas operativos"],"Un mismo equipo puede ser cliente y servidor a la vez."],
+["ssh","¿Qué identifica una dirección IP?",["Una interfaz de red","Un proceso","Un usuario","Un fichero"],"Un equipo con dos tarjetas tiene dos IP."],
+["ssh","¿Qué identifica un puerto?",["Un servicio o proceso dentro del equipo","El equipo en la red","La tarjeta de red","El usuario conectado"],"Como las puertas de un edificio."],
+["ssh","¿Qué comando muestra la dirección IP en Linux?",["ip addr","ss -lntp","netstat -r","ping"],"Se busca la línea inet de la interfaz."],
+["ssh","¿Qué puerto usa Telnet?",["23","22","21","80"],"TCP/23."],
+["ssh","¿Por qué Telnet no es seguro?",["Porque no cifra: usuario, contraseña y comandos viajan en claro","Porque usa UDP","Porque usa el puerto 23","Porque es muy lento"],"Cualquiera que capture el tráfico lo puede leer."],
+["ssh","¿Qué ocurre en el saludo TCP en tres pasos?",["SYN → SYN-ACK → ACK","SYN → ACK → FIN","ACK → SYN → FIN","FIN → ACK → SYN"],"Se establece la conexión antes de enviar datos."],
+["ssh","¿Qué es un puerto efímero?",["Un puerto temporal que el sistema asigna al cliente","El puerto fijo del servidor","Un puerto cerrado","Un puerto reservado para root"],"El servidor usa un puerto conocido; el cliente, uno efímero."],
+["ssh","¿Qué es un socket?",["La combinación de IP y puerto, un extremo de la conexión","Un cable de red","Un tipo de cifrado","Un filtro de Wireshark"],"Ejemplo: 192.168.1.120:23."],
+["ssh","¿Qué es Wireshark?",["Un analizador que captura y muestra el tráfico de red","Un cortafuegos","Un servidor web","Un cliente SSH"],"Permite ver los paquetes capa por capa."],
+["ssh","¿Qué tres paneles tiene Wireshark?",["Lista de paquetes, detalle por capas y bytes","Filtros, gráficos y estadísticas","Cliente, servidor y red","Captura, guardar y abrir"],"Lista · detalle · bytes."],
+["ssh","¿Qué filtro de Wireshark muestra el tráfico del puerto 23?",["tcp.port == 23","port = 23","tcp 23","filter:23"],"Es un filtro de visualización."],
+["ssh","Un filtro de visualización de Wireshark…",["oculta los paquetes que no coinciden, sin borrarlos","borra los paquetes","detiene la captura","cifra la captura"],"Ocultar no es borrar."],
+["ssh","¿Para qué sirve «Follow TCP Stream»?",["Para reconstruir la conversación completa de una conexión","Para cifrar la captura","Para cerrar la conexión","Para reenviar paquetes"],"Muestra el diálogo cliente-servidor seguido."],
+["ssh","¿Por qué en Telnet el usuario aparece con letras dobles en la captura?",["Porque el servidor devuelve un eco de cada carácter","Porque se envía dos veces","Porque está cifrado","Por un error de red"],"La contraseña no tiene eco y aparece una sola vez."],
+["ssh","¿Qué aporta SSH frente a Telnet?",["Cifra toda la sesión, incluida la contraseña","Usa el puerto 23","Es más rápido","No necesita usuario"],"Además verifica la identidad del servidor."],
+["ssh","¿Qué sigue siendo visible en una captura de SSH?",["El saludo TCP y las versiones y algoritmos negociados","La contraseña","Los comandos","La salida de los comandos"],"El contenido de la sesión va cifrado."],
+["ssh","¿Para qué sirve la huella (fingerprint) que muestra SSH en la primera conexión?",["Para comprobar que te conectas al servidor correcto","Para cifrar la contraseña","Para elegir el puerto","Para crear el usuario"],"Es un resumen de la clave pública del servidor."],
+["ssh","¿Qué hay que hacer al terminar la práctica de Telnet?",["Borrar las capturas con contraseñas y desactivar Telnet","Publicar las capturas","Dejar Telnet activo","Cambiar el puerto de Telnet"],"Capturar tráfico de terceros sin autorización puede ser delito."]
+);
+QB.push(
+/* ===== PRÁCTICA 2: HTTP, HTTPS, NGINX ===== */
+["tls","¿Qué relación hay entre HTTP y TCP?",["HTTP es un protocolo de aplicación que viaja sobre TCP","TCP viaja sobre HTTP","Son el mismo protocolo","HTTP sustituye a TCP"],"Aplicación sobre transporte."],
+["tls","¿Qué significa GET / HTTP/1.1?",["Método GET, ruta raíz y versión HTTP/1.1","Código, ruta y versión","Servidor, puerto y versión","Método, host y puerto"],"Es la línea de petición."],
+["tls","¿Qué hace Nginx con una petición GET / si tiene root /var/www/html e index index.html?",["Entrega /var/www/html/index.html","Lista la carpeta","Devuelve 404","Reenvía la petición a otra máquina"],"Raíz + ruta + fichero índice."],
+["tls","¿Por qué se suele ocultar la versión en la cabecera Server en producción?",["Porque da información útil a un atacante","Porque ocupa mucho","Porque rompe HTTPS","Porque los navegadores la rechazan"],"Revela el software y su versión."],
+["tls","¿Qué filtro de Wireshark muestra el tráfico HTTPS?",["tcp.port == 443","tcp.port == 80","http","telnet"],"También el filtro tls."],
+["tls","¿Qué riesgo tiene HTTP sin cifrar, además de poder leerse?",["Puede modificarse por el camino sin que se note","Que no funciona en Wi-Fi","Que pierde los códigos","Que cierra el puerto"],"Sin TLS no hay integridad."],
+["tls","¿Qué se ve en claro en una captura HTTPS?",["IP, puertos, tamaño de los datos y versión de TLS","El método y la ruta","Las cabeceras HTTP","El HTML"],"El contenido HTTP va cifrado."],
+["tls","¿Qué NO se puede leer en una captura HTTPS?",["Las cabeceras y el contenido HTTP","Las IP de origen y destino","Los puertos","La versión de TLS"],"Todo lo de HTTP va cifrado."],
+["tls","¿Qué es el SNI?",["El nombre del servidor que el cliente indica en claro al iniciar TLS","Un algoritmo de cifrado","El número de serie del certificado","Un código de error"],"Va en el Client Hello."],
+["tls","¿Qué es el handshake TLS?",["La negociación inicial de versión, algoritmos y claves","El saludo TCP en tres pasos","El cierre de la conexión","La petición GET"],"Ocurre después del saludo TCP."],
+["tls","¿Qué es un certificado autofirmado?",["Un certificado firmado por su propio emisor (sujeto = emisor)","Un certificado de Let's Encrypt","Un certificado sin clave pública","Un certificado caducado"],"Cifra, pero el cliente no confía en él."],
+["tls","¿Cifra la conexión un certificado autofirmado?",["Sí, pero el cliente no puede confiar en quién es el servidor","No, nunca cifra","Solo cifra las cabeceras","Solo en HTTP/1.1"],"Cifrado ≠ confianza."],
+["tls","¿Qué hace curl -k?",["Continúa sin validar el certificado","Desactiva el cifrado","Muestra solo cabeceras","Fuerza HTTP/1.0"],"Útil en laboratorio; peligroso en producción."],
+["tls","¿Por qué no se debe usar curl -k en producción?",["Porque no comprueba la identidad del servidor y permite que te suplanten","Porque no cifra","Porque es muy lento","Porque no funciona con Nginx"],"La conexión se cifra, pero no sabes con quién hablas."],
+["tls","¿Qué significa «cifrado ≠ confianza»?",["Una conexión puede estar cifrada con un servidor en el que no se confía","Cifrar ya garantiza la identidad","El certificado cifra los datos","La confianza depende de la velocidad"],"El cifrado protege el contenido; el certificado, la identidad."],
+["tls","¿Qué es una CA (autoridad de certificación)?",["Una entidad que firma certificados en los que otros confían","Un programa de cifrado","Un servidor web","Un tipo de clave"],"Ejemplos: Let's Encrypt, FNMT."],
+["tls","¿Qué es la cadena de confianza?",["Firmas enlazadas desde el certificado hasta una CA raíz","Una lista de contraseñas","El orden de las capas TCP/IP","Una red de servidores"],"El navegador confía en las CA raíz preinstaladas."],
+["tls","¿Qué mostraría un navegador ante un certificado autofirmado?",["Un aviso de conexión no privada","La página sin avisos","Un error 404","Un error 502"],"Igual que curl sin -k."]
+);
+QB.push(
+/* ===== EL VIAJE DE UN PAQUETE (TCP/IP) ===== */
+["paq","¿Cuántas capas tiene el modelo TCP/IP que se usa en clase?",["Cuatro","Siete","Tres","Cinco"],"Aplicación, transporte, internet y acceso a la red."],
+["paq","¿Cuántas capas tiene el modelo OSI?",["Siete","Cuatro","Cinco","Tres"],"TCP/IP agrupa varias de ellas."],
+["paq","¿Qué capas OSI agrupa la capa de aplicación de TCP/IP?",["Aplicación, presentación y sesión","Transporte y red","Enlace y física","Sesión y transporte"],"La de acceso a la red agrupa enlace y física."],
+["paq","¿Qué es la encapsulación?",["Que cada capa añade su cabecera a los datos de la capa superior","Cifrar los datos antes de enviarlos","Comprimir los paquetes","Dividir la red en subredes"],"El receptor hace lo contrario: desencapsular."],
+["paq","¿Qué es la desencapsulación?",["Que cada capa del receptor quita su cabecera y entrega el resto a la superior","Cifrar los datos","Reenviar la trama","Añadir cabeceras"],"Ocurre en el equipo de destino."],
+["paq","¿Cómo se llama la unidad de información en la capa de transporte?",["Segmento","Trama","Paquete","Bit"],"Datos → segmento → paquete → trama → bits."],
+["paq","¿Cómo se llama la unidad de información en la capa de red (IP)?",["Paquete","Segmento","Trama","Datos"],"IP trabaja con paquetes."],
+["paq","¿Cómo se llama la unidad de información en la capa de enlace (Ethernet)?",["Trama","Paquete","Segmento","Mensaje"],"Ethernet trabaja con tramas."],
+["paq","¿Cuál es el orden de nombres al bajar por las capas?",["Datos → segmento → paquete → trama → bits","Trama → paquete → segmento → datos","Bits → trama → segmento → paquete","Paquete → trama → segmento → datos"],"Cada nombre indica en qué capa estás."],
+["paq","¿Qué dirección usa la capa de transporte?",["El puerto","La IP","La MAC","La URL"],"Identifica el proceso."],
+["paq","¿Qué dirección usa la capa de red?",["La IP","La MAC","El puerto","El dominio"],"Identifica el equipo y la red."],
+["paq","¿Qué dirección usa la capa de acceso a la red?",["La MAC","La IP","El puerto","La URL"],"Identifica la tarjeta de red."],
+["paq","¿Cuántos bits tiene una dirección MAC?",["48","32","16","128"],"Se escribe con 6 pares hexadecimales."],
+["paq","¿Cuántos bits tiene una dirección IPv4?",["32","48","16","64"],"Cuatro números de 0 a 255."],
+["paq","¿Cuántos bits tiene un número de puerto?",["16","8","32","48"],"Va de 0 a 65535."],
+["paq","¿Quién asigna la dirección MAC?",["El fabricante de la tarjeta","El administrador","El router","El servidor DHCP"],"Va grabada en la tarjeta."],
+["paq","¿Qué dispositivo trabaja con direcciones MAC?",["El switch","El router","El servidor web","El navegador"],"Switch: capa de enlace."],
+["paq","¿Qué dispositivo trabaja con direcciones IP y encamina entre redes?",["El router","El switch","El hub","La tarjeta de red"],"Router: capa de red."],
+["paq","¿Para qué sirve el TTL de la cabecera IP?",["Para evitar que un paquete circule para siempre","Para indicar el puerto","Para medir la velocidad","Para indicar el tamaño"],"Cada router resta 1; si llega a 0, se descarta."],
+["paq","¿Qué hace un router con el TTL de un paquete?",["Lo resta en 1","Lo suma en 1","Lo pone a 0","No lo modifica"],"Si llega a 0, descarta el paquete."],
+["paq","¿Qué indica el campo Protocolo = 6 en la cabecera IP?",["Que dentro va TCP","Que dentro va UDP","Que dentro va ICMP","Que es IPv6"],"Así el receptor sabe a quién entregar el contenido."],
+["paq","¿Qué indica el campo Tipo 0x0800 en una trama Ethernet?",["Que dentro va IPv4","Que dentro va ARP","Que dentro va TCP","Que es una trama de error"],"0x0806 indica ARP."],
+["paq","¿Qué es la MTU de Ethernet?",["El tamaño máximo de paquete que cabe en una trama, 1500 bytes","El tiempo de vida del paquete","La velocidad del enlace","El número de saltos"],"Maximum Transmission Unit."],
+["paq","¿Para qué sirve el FCS de una trama Ethernet?",["Para detectar si la trama se ha dañado por el camino","Para indicar el destino","Para cifrar la trama","Para ordenar los paquetes"],"Es un tráiler al final de la trama."],
+["paq","¿Para qué sirve ARP?",["Para averiguar la MAC que corresponde a una IP de la red local","Para traducir un dominio a IP","Para asignar IP","Para cifrar la trama"],"Pregunta a todos; responde el dueño de la IP."],
+["paq","¿Cómo se envía la pregunta ARP?",["En broadcast, a todos los equipos de la red","Solo al router","Solo al servidor","Por el puerto 80"],"Dirección ff:ff:ff:ff:ff:ff."],
+["paq","Si el servidor está en otra red, ¿qué MAC de destino lleva la trama que sale del cliente?",["La de la puerta de enlace (el router)","La del servidor","La de broadcast","La del propio cliente"],"La MAC es solo para el siguiente salto."],
+["paq","Si cliente y servidor están en la misma red, ¿qué MAC de destino lleva la trama?",["La del servidor","La del router","La de broadcast","Ninguna"],"Entrega directa, sin routers."],
+["paq","Al atravesar routers, ¿qué cambia en cada salto?",["Las direcciones MAC","La IP de destino","Los puertos","El contenido HTTP"],"La IP de destino se mantiene hasta el final."],
+["paq","¿Qué dato se mantiene igual durante todo el viaje del paquete?",["La IP de destino","La MAC de destino","La MAC de origen","El TTL"],"Es la que permite encaminar."],
+["paq","¿Qué modifica NAT en el router de salida?",["La IP de origen privada, que cambia por la pública","La IP de destino","El puerto de destino","El contenido HTTP"],"NAT no toca la IP de destino."],
+["paq","¿Hasta qué capa lee un router?",["Hasta la capa de red (IP)","Hasta la capa de aplicación","Solo la capa física","Hasta la capa de transporte"],"TCP y HTTP solo los leen los extremos."],
+["paq","¿Cómo sabe el servidor a qué programa entregar los datos?",["Por el puerto de destino","Por la MAC","Por el TTL","Por la IP de origen"],"Puerto 80 → Nginx."],
+["paq","En la respuesta del servidor, ¿qué pasa con los puertos?",["Se intercambian origen y destino","Se mantienen iguales","Pasan a ser 80 y 80","Desaparecen"],"80 → puerto efímero del cliente."],
+["paq","¿Qué flag TCP se usa para abrir una conexión?",["SYN","FIN","ACK","PSH"],"FIN cierra; ACK confirma."],
+["paq","¿Qué flag TCP se usa para cerrar una conexión?",["FIN","SYN","PSH","URG"],"SYN abre."],
+["paq","¿Qué flag TCP confirma la recepción de datos?",["ACK","SYN","FIN","RST"],"ACK = acknowledgement."],
+["paq","¿Cómo consigue TCP una entrega fiable?",["Numera los bytes, el receptor confirma y se reenvía lo que no se confirma","Envía cada paquete dos veces","Usa el TTL","Cifra los datos"],"Además reordena los datos."],
+["paq","¿Es una petición web un único paquete?",["No: incluye ARP, saludo TCP, petición, confirmaciones, respuesta y cierre","Sí, siempre","Sí, salvo con HTTPS","No, son siempre dos"],"Al menos una decena de tramas."],
+["paq","Con HTTPS, ¿siguen visibles las IP y los puertos?",["Sí, la red los necesita para entregar los datos","No, TLS los cifra","Solo la IP","Solo los puertos"],"TLS protege el contenido HTTP, no las cabeceras de red."],
+["paq","¿Qué significa la máscara /24 en 192.168.1.50/24?",["Que los tres primeros números identifican la red","Que hay 24 equipos","Que el puerto es el 24","Que la IP es pública"],"24 bits de red."],
+["paq","¿Qué es la puerta de enlace?",["El router por el que salen los paquetes hacia otras redes","El switch de la red","El servidor DNS","El servidor web"],"Gateway."]
+);
+QB.push(
+/* ===== CIFRADO, FIRMA Y CERTIFICADOS ===== */
+["cri","En el cifrado simétrico…",["se usa la misma clave para cifrar y descifrar","se usan una clave pública y otra privada","no se usa ninguna clave","solo se puede firmar"],"Es rápido y sirve para grandes volúmenes."],
+["cri","¿Cuál es el principal problema del cifrado simétrico?",["Hacer llegar la clave al otro extremo de forma segura","Que es muy lento","Que no cifra bien","Que necesita certificados"],"Si interceptan la clave, se lee todo."],
+["cri","¿Cuál es un algoritmo de cifrado simétrico actual?",["AES","RSA","SHA-256","MD5"],"También ChaCha20."],
+["cri","En el cifrado asimétrico…",["se usa un par de claves: pública y privada","se usa una única clave compartida","no hay claves","se usa un hash"],"Conocer la pública no permite calcular la privada."],
+["cri","¿Cuál es un algoritmo de cifrado asimétrico?",["RSA","AES","SHA-256","ChaCha20"],"También ECC."],
+["cri","¿Qué clave se puede compartir con cualquiera?",["La pública","La privada","Las dos","Ninguna"],"La privada nunca se comparte."],
+["cri","Para enviar un mensaje que solo pueda leer Benito, ¿con qué clave se cifra?",["Con la pública de Benito","Con la privada de Benito","Con la privada del emisor","Con la pública del emisor"],"Benito lo descifra con su privada."],
+["cri","¿Con qué clave se firma un documento?",["Con la clave privada del firmante","Con la clave pública del firmante","Con la pública del receptor","Con una clave simétrica"],"Cualquiera verifica con la pública."],
+["cri","¿Con qué clave se verifica una firma?",["Con la clave pública del firmante","Con la privada del firmante","Con la privada del receptor","Con una contraseña"],"La pública va en el certificado."],
+["cri","¿Cuál es la principal desventaja del cifrado asimétrico?",["Es mucho más lento que el simétrico","No permite firmar","Hay que compartir la privada","No es seguro"],"Por eso se combina con el simétrico."],
+["cri","¿En qué consiste el cifrado híbrido?",["Asimétrico al inicio para acordar la clave y simétrico para el resto","Simétrico al inicio y asimétrico después","Solo asimétrico","Dos claves simétricas"],"Es la base de HTTPS y SSH."],
+["cri","¿Para qué sirve Diffie-Hellman?",["Para acordar una clave común entre dos partes","Para firmar documentos","Para calcular hashes","Para cifrar discos"],"No cifra ni firma por sí mismo."],
+["cri","¿Qué es una función hash?",["Una función que produce un resumen de tamaño fijo de cualquier dato","Un algoritmo de cifrado reversible","Un tipo de certificado","Una clave privada"],"Es la «huella dactilar» del dato."],
+["cri","¿Cuántos bits ocupa un hash SHA-256?",["256","128","512","64"],"64 caracteres hexadecimales."],
+["cri","¿Se puede obtener el dato original a partir de su hash?",["No, es de un solo sentido","Sí, con la clave pública","Sí, con la privada","Solo con SHA-1"],"La huella no revela el contenido."],
+["cri","Cambiar una sola letra produce un hash completamente distinto. ¿Cómo se llama?",["Efecto avalancha","Colisión","Determinismo","No repudio"],"hola y Hola dan hashes totalmente distintos."],
+["cri","¿Qué significa que una función hash sea determinista?",["Que el mismo dato produce siempre el mismo hash","Que no se puede revertir","Que el tamaño es fijo","Que no hay colisiones"],"Por eso el verificador puede recalcularlo."],
+["cri","¿Qué funciones hash ya no se consideran seguras para firmar?",["MD5 y SHA-1","SHA-256 y SHA-512","SHA-3","SHA-256"],"Hoy se usa SHA-2 o SHA-3."],
+["cri","¿Qué garantiza una firma digital?",["Autenticidad, integridad y no repudio","Confidencialidad","Disponibilidad","Anonimato"],"No oculta el contenido."],
+["cri","¿Qué significa «no repudio»?",["Que el firmante no puede negar haber firmado","Que el documento no se puede leer","Que el certificado no caduca","Que nadie puede copiar el documento"],"Solo él tiene la clave privada."],
+["cri","¿Qué se firma realmente al firmar un documento?",["Su hash","El documento entero","La clave pública","El certificado"],"Se firma el resumen, no el PDF completo."],
+["cri","¿Firmar un PDF lo cifra?",["No, el PDF se sigue leyendo con normalidad","Sí, con la clave privada","Sí, con la pública","Solo con AutoFirma"],"Firmar no es cifrar."],
+["cri","Al verificar una firma, los hashes no coinciden. ¿Qué significa?",["Que el documento se ha modificado o la clave no corresponde","Que la firma es válida","Que el certificado ha caducado","Que hay que usar MD5"],"Cambiar una coma basta para que no coincidan."],
+["cri","¿Qué problema resuelve el certificado digital?",["Saber a quién pertenece realmente una clave pública","Acelerar el cifrado","Ocultar la clave privada","Comprimir documentos"],"Une clave pública e identidad, firmadas por una CA."],
+["cri","¿Qué contiene un certificado digital?",["La identidad del titular y su clave pública, firmadas por una CA","La clave privada del titular","La contraseña del titular","El documento firmado"],"La clave privada nunca va en el certificado."],
+["cri","¿Qué estándar siguen los certificados digitales?",["X.509","PKCS#12","SHA-256","AES"],"PKCS#12 es el formato .p12."],
+["cri","¿Dónde se genera la clave privada al pedir un certificado a la FNMT?",["En tu propio equipo","En los servidores de la FNMT","En el DNI","En el navegador del funcionario"],"La FNMT solo firma tu clave pública."],
+["cri","¿Por qué hay que descargar el certificado de la FNMT en el mismo equipo y navegador?",["Porque la clave privada solo existe allí","Por una cuestión de licencia","Porque caduca","Porque la FNMT lo exige sin motivo"],"La privada se generó en ese navegador."],
+["cri","¿Qué es la CA raíz?",["La autoridad de confianza preinstalada en el sistema o navegador","Un certificado de usuario","Una clave privada","Un servidor web"],"Raíz → intermedia → usuario."],
+["cri","¿Qué significa el aviso «firma no confiable»?",["Que no se confía en quién emitió el certificado, aunque la firma pueda ser correcta","Que el documento ha sido modificado","Que la firma está mal calculada","Que el PDF está cifrado"],"Validez criptográfica y confianza son dos comprobaciones distintas."],
+["cri","¿Qué hay que hacer si te roban la clave privada?",["Revocar el certificado","Nada","Cambiar la clave pública","Publicarla"],"Alguien podría firmar en tu nombre."],
+["cri","¿Qué mecanismos permiten comprobar si un certificado está revocado?",["CRL y OCSP","SHA y MD5","AES y RSA","PAdES y XAdES"],"Lista de revocación y consulta en línea."],
+["cri","¿Qué contiene un fichero .p12 o .pfx?",["El certificado y la clave privada, protegidos con contraseña","Solo el certificado","Solo la clave pública","La lista de revocación"],"Es la copia de seguridad completa: no se comparte."],
+["cri","¿Se puede compartir el fichero .p12 con un compañero?",["No, podría firmar en tu nombre","Sí, sin problema","Sí, si cambias la contraseña","Solo para verificar"],"Firmaría con validez legal."],
+["cri","¿Qué fichero contiene solo el certificado y se puede compartir?",[".crt o .cer",".key",".p12",".pfx"],".key es la clave privada."],
+["cri","¿Qué formato de firma de AutoFirma incrusta la firma dentro del PDF?",["PAdES","CAdES","XAdES","X.509"],"CAdES: fichero aparte · XAdES: XML."],
+["cri","¿Qué formato de firma se usa para documentos XML, como las facturas electrónicas?",["XAdES","PAdES","CAdES","PKCS#12"],"X de XML."],
+["cri","¿Qué es AutoFirma?",["La aplicación oficial de la Administración para firmar documentos","Una autoridad de certificación","Un tipo de certificado","Un algoritmo de hash"],"Firma con tu certificado digital."],
+["cri","Según eIDAS, ¿qué nivel de firma requiere un dispositivo seguro como el DNIe?",["Cualificada","Avanzada","Simple","Básica"],"Simple → avanzada → cualificada."],
+["cri","¿Para qué sirve un certificado autofirmado?",["Para pruebas y laboratorios internos","Para trámites con la Administración","Para nada","Para sustituir al de la FNMT"],"No sirve para que terceros confíen."]
+);
+var FIX = {};
+Object.assign(FIX,{
+"¿En qué consiste implantar (desplegar) una aplicación?":["En conseguir que funcione correctamente en el entorno donde se va a usar","En escribir el código de la aplicación y sus pruebas unitarias","En diseñar la interfaz y la experiencia de usuario","En compilar el código y subirlo a un repositorio Git"],
+"Una implantación es reproducible cuando…":["otra persona puede repetirla con la documentación y obtener lo mismo","funciona igual en el portátil del desarrollador que en el servidor","se ha realizado una vez sin que aparezca ningún error","solo quien la hizo sabe qué tocar para que arranque"],
+"¿Para qué sirve una CDN?":["Para servir copias de los recursos desde lugares cercanos al usuario","Para traducir los nombres de dominio a direcciones IP","Para ejecutar la lógica de negocio de la aplicación","Para guardar los datos de los usuarios de forma persistente"],
+"¿Qué caracteriza a una arquitectura monolítica?":["Toda la aplicación se construye y se despliega como una sola unidad","Cada funcionalidad es un servicio independiente con su despliegue","El frontend se descarga una vez y consume una API que devuelve JSON","Cada capa se instala obligatoriamente en una máquina distinta"],
+"¿Cuál es una ventaja del monolito?":["Es sencillo de desarrollar, probar y desplegar al principio","Permite escalar cada parte de la aplicación por separado","Una misma API puede servir a la web y a la app móvil","Si falla una parte, el resto de la aplicación sigue funcionando"],
+"¿Qué ventaja tiene la arquitectura de tres capas?":["Se puede cambiar una capa sin tocar las demás","Se despliega como una sola unidad muy sencilla","Tiene menos componentes que instalar que un monolito","Permite que el cliente acceda directamente a los datos"],
+"¿Cuál es la principal ventaja del modelo cliente + API?":["La misma API puede servir a la web y a la app móvil","Toda la aplicación se despliega como una sola unidad","No hace falta autenticar a los usuarios de la API","No es necesario ningún servidor web ni de aplicaciones"],
+"¿Qué caracteriza a los microservicios?":["La aplicación se divide en servicios pequeños que se despliegan por separado","Toda la aplicación se construye y despliega como un único bloque","La aplicación tiene exactamente tres capas: presentación, lógica y datos","El cliente accede directamente a la base de datos sin pasar por una API"],
+"¿Cuál es la principal ventaja de los microservicios?":["Cada servicio se escala y actualiza por separado","Son muy sencillos de operar y de monitorizar","Necesitan menos componentes que un monolito","Comparten una única base de datos entre todos"],
+"¿Cuál es el principal inconveniente de los microservicios?":["Mucha complejidad operativa: redes, monitorización y fallos parciales","Un cambio pequeño obliga a desplegar toda la aplicación de nuevo","No se pueden escalar las partes de la aplicación por separado","Solo permiten usar un lenguaje de programación en todo el sistema"],
+"¿Cuál es la mejor arquitectura web?":["Depende de los requisitos, el equipo y el presupuesto","Los microservicios, porque escalan mejor que el resto","El monolito, porque es la más sencilla de desplegar","Cliente + API, porque sirve a la web y al móvil"],
+"¿Qué aporta HTTP/2 frente a HTTP/1.1?":["Varias peticiones a la vez por una misma conexión","Funcionar sobre UDP en lugar de sobre TCP","Mensajes en texto legible en lugar de binario","Nuevos métodos y nuevos códigos de estado"],
+"¿Qué cambia entre las versiones de HTTP?":["El formato en que viajan los mensajes","Los métodos que se pueden usar","El significado de los códigos de estado","Las cabeceras que se pueden enviar"],
+"¿Para qué sirve la cabecera Host?":["Para indicar qué sitio se pide dentro del servidor","Para indicar la dirección IP real del cliente","Para indicar el tamaño del cuerpo en bytes","Para indicar el navegador que hace la petición"],
+"¿Qué hace el método HEAD?":["Pide lo mismo que GET, pero solo recibe las cabeceras","Borra el recurso indicado en la ruta de la URL","Envía datos al servidor para crear un recurso nuevo","Modifica solo una parte de un recurso que ya existe"],
+"¿Qué diferencia hay entre PUT y PATCH?":["PUT sustituye el recurso y PATCH lo modifica en parte","PUT borra el recurso y PATCH crea uno nuevo","PUT obtiene el recurso y PATCH envía datos","No hay diferencia: los dos hacen exactamente lo mismo"],
+"¿Qué indica la cabecera Cache-Control?":["Si la respuesta se puede guardar en caché y cuánto tiempo","El tipo de contenido que lleva el cuerpo de la respuesta","El software del servidor que ha generado la respuesta","La dirección IP del cliente que realizó la petición"],
+"¿Qué significa el código 304?":["No modificado: puede usarse la copia en caché","Redirección permanente a otra dirección","Recurso creado correctamente en el servidor","Error interno al procesar la petición"],
+"¿Qué tres garantías aporta TLS?":["Confidencialidad, integridad y autenticación","Rapidez, compresión y almacenamiento en caché","Disponibilidad, anonimato y balanceo de carga","Integridad, compresión y no repudio del cliente"],
+"¿Qué es un endpoint?":["Una URL concreta de una API, como /api/saludo","El último router por el que pasa un paquete","Un servidor dedicado solo a la base de datos","Un bloque de configuración del fichero de Nginx"],
+"¿Cuáles son las dos funciones básicas de un servidor web?":["Servir contenido estático y actuar como proxy inverso","Ejecutar la lógica de negocio y guardar los datos","Resolver nombres de dominio y asignar direcciones IP","Compilar el código y desplegarlo en producción"],
+"¿Qué es un proxy inverso?":["Un servidor que recibe peticiones y las reenvía a servidores internos","Un servidor que traduce los nombres de dominio a direcciones IP","Un programa que permite al cliente navegar de forma anónima","Un servicio que guarda copias de seguridad de la base de datos"],
+"¿Cómo es el modelo interno de Nginx?":["Por eventos: pocos workers atienden muchas conexiones","Un proceso independiente por cada conexión recibida","Un único proceso que atiende las peticiones en cola","Un hilo nuevo por cada usuario que se conecta"],
+"¿Qué característica es propia de Apache?":["Los ficheros .htaccess de configuración por carpeta","Los bloques server y location en sites-available","La configuración centralizada en /etc/nginx/","El modelo asíncrono por eventos con workers"],
+"¿Cuál es un punto fuerte de Nginx?":["Servir estáticos y hacer de proxy con poca memoria","Ejecutar directamente código JavaScript y PHP","Configurarse con ficheros .htaccess por carpeta","Guardar los datos de la aplicación de forma persistente"],
+"¿Qué contiene la carpeta sites-available?":["Un fichero por cada sitio, esté activo o no","Únicamente los sitios que están activos","Los ficheros de log de cada uno de los sitios","Los ficheros HTML de cada uno de los sitios"],
+"¿Qué contiene la carpeta sites-enabled?":["Enlaces simbólicos a los sitios activos","Copias de todos los sitios, activos o no","Los ficheros HTML de los sitios activos","Los logs de acceso y de error de cada sitio"],
+"¿Cómo se activa un sitio de Nginx en Ubuntu?":["Creando un enlace simbólico en sites-enabled","Copiando el fichero a la carpeta /var/www/html","Añadiendo el sitio al fichero /etc/hosts del servidor","Ejecutando npm start en la carpeta del sitio"],
+"¿Qué indica la directiva root?":["La carpeta con los ficheros del sitio","El usuario administrador del servidor","El puerto en el que escucha el sitio","El nombre de dominio al que responde"],
+"¿Qué indica la directiva index?":["El fichero que se sirve por defecto en una carpeta","La carpeta donde están los ficheros del sitio","El nombre de dominio al que responde el sitio","El puerto en el que escucha el sitio"],
+"¿Qué indica la directiva server_name?":["El nombre al que responde el sitio (cabecera Host)","El nombre del proceso master de Nginx","El hostname del sistema operativo del servidor","El usuario con el que se ejecutan los workers"],
+"¿Qué hace try_files $uri $uri/ =404?":["Busca el fichero o la carpeta pedidos y, si no existen, da 404","Reenvía todas las peticiones a la aplicación Node.js","Devuelve siempre un 404 para cualquier ruta solicitada","Escribe cada petición en el log y luego devuelve un 404"],
+"¿Qué hace sudo nginx -T?":["Comprueba la sintaxis y muestra la configuración completa","Detiene el servicio y comprueba que no quedan procesos","Recarga la configuración sin cortar las conexiones","Muestra las últimas líneas del log de errores de Nginx"],
+"¿Qué diferencia hay entre reload y restart?":["reload aplica cambios sin cortar conexiones; restart las corta","reload detiene el servicio; restart solo comprueba la sintaxis","restart aplica cambios sin cortar conexiones; reload las corta","No hay diferencia: los dos reinician el servicio por completo"],
+"¿Qué hace systemctl enable nginx?":["Hace que Nginx arranque al iniciar el sistema","Arranca Nginx inmediatamente, solo esta vez","Comprueba la sintaxis de la configuración","Instala Nginx desde los repositorios de Ubuntu"],
+"¿Qué es Node.js?":["Un runtime que ejecuta JavaScript fuera del navegador","Un servidor web escrito en C, similar a Nginx","Un framework de CSS para diseñar interfaces","Un sistema gestor de bases de datos NoSQL"],
+"¿Qué es Express?":["Un framework de Node.js para crear servidores y APIs","El gestor de paquetes que viene con Node.js","Un servidor web escrito en C como Nginx","Una base de datos para aplicaciones JavaScript"],
+"¿Qué significa const PORT = process.env.PORT || 3000?":["Usa la variable de entorno PORT o, si no existe, el 3000","Usa siempre el puerto 3000 aunque exista la variable PORT","Lee el puerto del fichero package.json o usa el 3000","Suma el valor de PORT y 3000 para calcular el puerto"],
+"¿Qué significa que un servicio escuche en 0.0.0.0?":["Que escucha en todas las interfaces y es accesible desde fuera","Que solo acepta conexiones desde la propia máquina","Que no está escuchando en ningún puerto en este momento","Que solo acepta conexiones a través de IPv6"],
+"¿Para qué se crea una unidad de systemd para la aplicación Node.js?":["Para que arranque sola con el sistema y se reinicie si falla","Para comprobar la sintaxis de la configuración de Nginx","Para abrir el puerto de la aplicación en el cortafuegos","Para instalar las dependencias que necesita la aplicación"],
+"¿Por qué se pone Nginx delante de Node.js?":["Para terminar TLS, servir estáticos y repartir el tráfico","Porque Node.js no puede escuchar en ningún puerto TCP","Porque Node.js no sabe generar respuestas HTTP","Para que la aplicación pueda ejecutar código PHP"],
+"¿Qué indica la cabecera X-Forwarded-Proto?":["Si la petición original llegó por HTTP o por HTTPS","La dirección IP real del cliente que hizo la petición","El nombre del sitio que pidió el cliente","El tamaño de la respuesta que devuelve la aplicación"],
+"¿Para qué sirve un bloque location /static/ con alias en el proxy?":["Para que Nginx sirva los estáticos sin pasar por la app","Para reenviar los ficheros estáticos a Node.js","Para bloquear el acceso a la carpeta de estáticos","Para guardar en caché las respuestas de la API"],
+"Nginx devuelve 502 Bad Gateway al hacer de proxy. ¿Qué significa?":["Nginx no puede conectar con la aplicación de detrás","Nginx tiene un error de sintaxis en su configuración","El recurso solicitado no existe en el servidor","El cliente no tiene permisos para ver el recurso"],
+"¿Qué indica un 504 Gateway Timeout?":["La aplicación tarda demasiado en responder","La aplicación no está arrancada","El recurso pedido no existe","Falta un punto y coma en Nginx"]
+});
+Object.assign(FIX,{
+"¿Qué es una máquina virtual?":["Un ordenador simulado por software con su propio sistema operativo","Un proceso aislado que comparte el kernel del sistema anfitrión","Un servidor físico alquilado a un proveedor de la nube","Una plantilla de solo lectura a partir de la que se crean contenedores"],
+"¿Qué es un hipervisor?":["El software que crea y ejecuta máquinas virtuales","El motor que crea y ejecuta contenedores Docker","El servidor que recibe y reparte el tráfico web","El programa que gestiona los paquetes del sistema"],
+"¿Cuál es una ventaja de las máquinas virtuales?":["Permiten instantáneas para volver a un estado anterior","Arrancan en un segundo porque no llevan sistema operativo","Ocupan solo unos megas al compartir el kernel","No hay que actualizar nunca el sistema operativo invitado"],
+"¿Cuál es un inconveniente de las máquinas virtuales?":["Cada VM reserva RAM y disco para un sistema completo","No aíslan en absoluto del equipo anfitrión","No permiten hacer instantáneas del sistema","Solo pueden ejecutar sistemas operativos Linux"],
+"¿Qué es un contenedor?":["Un proceso aislado que comparte el kernel del anfitrión","Un ordenador virtual con su propio sistema operativo","Un servidor físico dedicado a una sola aplicación","Un fichero de texto con instrucciones de construcción"],
+"¿Cuál es la principal diferencia entre un contenedor y una VM?":["El contenedor comparte el kernel; la VM lleva su propio SO","La VM comparte el kernel; el contenedor lleva su propio SO","El contenedor aísla más que la VM porque usa un hipervisor","No hay diferencia: son dos nombres para lo mismo"],
+"¿Qué es una imagen de Docker?":["Una plantilla de solo lectura para crear contenedores","Un contenedor que se está ejecutando en este momento","Un almacenamiento que sobrevive al contenedor","Un servidor donde se publican y descargan imágenes"],
+"¿Qué es un Dockerfile?":["Un fichero con las instrucciones para construir una imagen","Un fichero que describe varios servicios para Compose","Un contenedor en marcha con su capa de escritura","Un registro donde se publican las imágenes"],
+"¿Para qué sirve un volumen en Docker?":["Para guardar datos que sobreviven al contenedor","Para publicar un puerto del contenedor en el anfitrión","Para construir una imagen a partir de un Dockerfile","Para limitar la memoria que usa el contenedor"],
+"En un Dockerfile, ¿qué diferencia hay entre RUN y CMD?":["RUN se ejecuta al construir la imagen y CMD al arrancar el contenedor","RUN se ejecuta al arrancar el contenedor y CMD al construir la imagen","RUN y CMD son equivalentes y se pueden usar indistintamente","CMD instala dependencias y RUN indica la imagen base"],
+"¿Para qué sirve el fichero .dockerignore?":["Para no copiar a la imagen node_modules, .env o .git","Para ignorar los errores que aparecen al construir","Para ocultar el contenedor a los demás usuarios","Para no publicar los puertos del contenedor"],
+"¿Por qué la app debe escuchar en 0.0.0.0 dentro de un contenedor?":["Porque 127.0.0.1 sería el propio contenedor y no se llegaría desde fuera","Porque Docker no permite usar la dirección 127.0.0.1 en ningún caso","Porque así la aplicación solo es accesible desde dentro del contenedor","Porque 0.0.0.0 obliga a usar IPv6 y es más seguro"],
+"¿Qué riesgo tiene añadir tu usuario al grupo docker?":["Equivale en la práctica a tener permisos de root","Impide usar sudo con ese usuario a partir de entonces","Borra las imágenes descargadas por otros usuarios","Ninguno: es la configuración recomendada en producción"],
+"¿Para qué sirve Docker Compose?":["Para describir y levantar varios contenedores con un fichero","Para construir una única imagen a partir de un Dockerfile","Para crear y gestionar máquinas virtuales en el anfitrión","Para publicar imágenes en Docker Hub automáticamente"],
+"En Docker Compose, ¿cómo se comunica Nginx con el servicio app?":["Por el nombre del servicio: http://app:3000","Por la dirección local: http://127.0.0.1:3000","Por la IP del anfitrión: http://192.168.56.10:3000","No se pueden comunicar entre contenedores"],
+"¿Qué es la nube?":["Alquilar recursos informáticos bajo demanda y pagando por uso","Una tecnología concreta de virtualización creada por Amazon","Un tipo de servidor web pensado para mucho tráfico","Un sistema operativo que se ejecuta en Internet"],
+"¿Qué caracteriza al modelo serverless (FaaS)?":["Ejecuta funciones ante eventos y se paga por ejecución","Proporciona máquinas virtuales completas que tú administras","Ofrece una aplicación terminada que el usuario solo utiliza","Obliga a gestionar los servidores y parchear el sistema"],
+"¿Qué es un recurso estático?":["Un fichero que se entrega tal cual está en el disco","Una respuesta generada consultando la base de datos","Una consulta que cambia según el usuario conectado","Un endpoint de la API que devuelve datos en JSON"],
+"¿Qué es un recurso dinámico?":["Una respuesta que se genera en el momento","Un fichero CSS que se sirve desde el disco","Una imagen guardada en la carpeta public","Un fichero HTML que nunca cambia"],
+"¿Para qué sirve el fichero package.json?":["Para declarar las dependencias del proyecto","Para guardar las contraseñas del proyecto","Para configurar el sitio en Nginx","Para guardar los logs de la aplicación"],
+"¿Para qué sirve package-lock.json?":["Para fijar las versiones exactas de las dependencias","Para guardar las variables de entorno del proyecto","Para describir los contenedores del proyecto","Para documentar los pasos del despliegue"],
+"¿Se sube la carpeta node_modules a Git?":["No, se genera al instalar las dependencias","Sí, siempre, para no tener que instalar nada","Solo cuando se despliega en producción","Solo si ocupa menos de 100 MB"],
+"¿Por qué no se suben secretos a Git, ni siquiera a un repositorio privado?":["Porque el historial de Git los conserva para siempre","Porque Git no permite versionar ficheros ocultos","Porque ocupan demasiado espacio en el repositorio","Porque Node.js no puede leer un .env versionado"],
+"¿Por qué la configuración se guarda en variables de entorno y no en el código?":["Porque el código es el mismo en todos los entornos y solo cambia la configuración","Porque las variables de entorno hacen que la aplicación se ejecute más rápido","Porque las variables de entorno se cifran automáticamente en el servidor","Porque así la configuración se puede subir a Git sin ningún riesgo"],
+"¿Qué es una variable de entorno?":["Configuración que se pasa al proceso desde fuera del código","Una constante escrita dentro del código de la aplicación","Una columna de la tabla de configuración de la base de datos","Un parámetro que se envía en la URL de la petición"],
+"¿Dónde se guardan los secretos en entornos profesionales?":["En gestores de secretos como Vault o Docker secrets","En el README del repositorio, para que estén a mano","En comentarios dentro del código que los usa","En el .env.example que se sube a Git"],
+"¿Qué recurso aporta la persistencia de la información?":["Los datos","Los logs","Las dependencias","La configuración"],
+"¿Por qué hay que analizar los requisitos antes de desplegar?":["Para no tener que repetir la implantación varias veces","Porque lo exige la normativa de protección de datos","Para poder elegir el diseño visual de la aplicación","Para tener que escribir menos código en el backend"],
+"¿Cuál es el orden de las primeras etapas del código a producción?":["Código → Dependencias → Build → Tests → Empaquetado → Despliegue","Código → Build → Despliegue → Dependencias → Tests → Empaquetado","Dependencias → Código → Tests → Despliegue → Build → Empaquetado","Código → Tests → Empaquetado → Build → Dependencias → Despliegue"],
+"¿Por qué «desplegar es copiar los ficheros por FTP» es un mito?":["Porque sin dependencias, configuración y pruebas no está desplegado","Porque el protocolo FTP está prohibido en servidores Linux","Porque hoy en día siempre hay que desplegar con Docker","Porque desplegar consiste en compilar el código, no en copiarlo"],
+"¿Por qué «si compila, ya está» es un mito?":["Porque compilar no demuestra que funcione en el servidor","Porque JavaScript no se compila y la frase no tiene sentido","Porque hay que compilar dos veces: en desarrollo y en producción","Porque compilar ya incluye pasar todas las pruebas automáticas"],
+"¿Qué significa CI/CD?":["Integración y despliegue continuos","Control de imágenes y contenedores","Configuración inicial y copia diaria","Cliente integrado y datos compartidos"],
+"¿Cuál es el orden del método de diagnóstico de la unidad?":["Instalado → iniciado → escuchando → configurado → accesible → probado","Probado → accesible → configurado → escuchando → iniciado → instalado","Instalado → configurado → probado → iniciado → escuchando → accesible","Escuchando → instalado → accesible → iniciado → probado → configurado"],
+"¿Qué hace curl -v?":["Muestra la petición y la respuesta completas","Muestra solo el cuerpo de la respuesta","Continúa sin validar el certificado","Muestra solo las cabeceras de respuesta"],
+"curl devuelve «Connection refused». ¿Qué ocurre?":["Se llega a la máquina, pero nada escucha en ese puerto","No se puede traducir el nombre del servidor a una IP","Un cortafuegos descarta los paquetes sin responder","La aplicación tarda demasiado en devolver la respuesta"],
+"curl devuelve «Connection timed out». ¿Qué es lo más probable?":["Un cortafuegos o una IP equivocada","Nada escucha en ese puerto del servidor","El fichero pedido no existe en el disco","Hay un error de sintaxis en Nginx"],
+"Nginx responde 403 Forbidden. ¿Qué revisas?":["Los permisos de los ficheros o que falte el index.html","El DNS o el /etc/hosts del equipo cliente","Que la aplicación Node.js esté arrancada","El puerto indicado en la directiva proxy_pass"],
+"La aplicación responde 500 Internal Server Error. ¿Dónde miras?":["En los logs de la app: journalctl o docker logs","En el fichero /etc/hosts del equipo cliente","En las reglas del cortafuegos con ufw status","En los enlaces de la carpeta sites-enabled"],
+"Nginx no arranca: «Address already in use» en el puerto 80. ¿Por qué?":["Otro programa, como Apache, ya ocupa el puerto 80","Falta un punto y coma en el bloque server del sitio","El usuario no pertenece al grupo docker del sistema","El DNS no resuelve el nombre del sitio configurado"],
+"nginx -t muestra «unexpected }». ¿Qué suele faltar?":["Un punto y coma","Un certificado TLS","Un usuario del sistema","Un puerto libre"],
+"«permission denied … Docker daemon socket». ¿Qué ocurre?":["Tu usuario no está en el grupo docker","El contenedor que buscas no existe","El puerto del contenedor ya está ocupado","La imagen descargada está dañada"],
+"¿Qué es un health check?":["Una ruta que indica si la app está lista","Un antivirus que analiza el servidor","Una copia de seguridad automática","Un test unitario del código"],
+"¿Qué comando muestra en directo las peticiones que llegan a Nginx?":["sudo tail -f /var/log/nginx/access.log","sudo cat /etc/nginx/sites-enabled/default","sudo nginx -T | grep access_log","sudo systemctl status nginx --full"],
+"¿Qué es la superficie de exposición?":["El conjunto de servicios y puertos accesibles desde fuera","El espacio en disco que ocupa la aplicación desplegada","El número máximo de usuarios conectados a la vez","La cantidad de memoria reservada para cada servicio"],
+"¿Qué puertos no deberían ser accesibles desde Internet?":["3000 (Node.js) y 5432 (PostgreSQL)","80 (HTTP) y 443 (HTTPS)","443 (HTTPS) y 80 (HTTP) redirigido","80 (HTTP) solamente"],
+"¿Por qué hay que tener cuidado con Docker y ufw?":["Docker abre los puertos publicados aunque ufw diga lo contrario","Docker desactiva ufw cada vez que arranca un contenedor nuevo","ufw borra los contenedores que publican puertos no permitidos","Docker y ufw no pueden instalarse a la vez en la misma máquina"],
+"¿Cuándo está bien hecha la documentación de una implantación?":["Cuando otra persona puede repetir la instalación sin ayuda","Cuando ocupa muchas páginas y explica cada comando","Cuando incluye capturas de pantalla de todos los pasos","Cuando la revisa y aprueba el responsable del proyecto"],
+"¿Dónde debe guardarse la documentación de la implantación?":["En el repositorio, versionada con Git","En el escritorio del servidor de producción","Dentro del fichero .env de la aplicación","En un correo enviado al resto del equipo"],
+"¿Qué debe contener el README de un despliegue?":["Requisitos, instalación, configuración y pruebas","Solo el código fuente comentado de la aplicación","Las contraseñas de acceso al servidor y a la BD","El nombre del autor y la fecha de creación"]
+});
+Object.assign(FIX,{
+"¿Qué son «cliente» y «servidor»?":["Papeles que hacen los programas, no tipos de máquina","Dos tipos de ordenador con distinto hardware","Sinónimos de equipo anfitrión y máquina virtual","Dos sistemas operativos distintos instalados en red"],
+"¿Qué identifica un puerto?":["Un servicio o proceso dentro del equipo","El equipo dentro de la red local","La tarjeta de red del equipo","El usuario que está conectado"],
+"¿Por qué Telnet no es seguro?":["Porque no cifra nada: todo viaja en claro","Porque funciona sobre UDP y pierde datos","Porque el puerto 23 es inseguro en sí mismo","Porque no pide usuario ni contraseña"],
+"¿Qué es un puerto efímero?":["Un puerto temporal que el sistema asigna al cliente","El puerto fijo y conocido que usa el servidor","Un puerto cerrado por el cortafuegos del sistema","Un puerto reservado solo para el usuario root"],
+"¿Qué es un socket?":["La combinación de IP y puerto de un extremo","El cable que conecta el equipo a la red","Un tipo de cifrado usado por SSH","Un filtro de visualización de Wireshark"],
+"¿Qué es Wireshark?":["Un analizador de tráfico de red","Un cortafuegos para Linux","Un servidor web ligero","Un cliente de SSH gráfico"],
+"Un filtro de visualización de Wireshark…":["oculta los paquetes que no coinciden, sin borrarlos","borra de la captura los paquetes que no coinciden","detiene la captura cuando encuentra un paquete","cifra los paquetes que coinciden con el filtro"],
+"¿Para qué sirve «Follow TCP Stream»?":["Para reconstruir la conversación de una conexión","Para cifrar la captura antes de guardarla","Para cerrar la conexión TCP seleccionada","Para reenviar los paquetes al servidor"],
+"¿Por qué en Telnet el usuario aparece con letras dobles en la captura?":["Porque el servidor devuelve un eco de cada carácter","Porque el cliente envía cada letra dos veces","Porque Telnet cifra el usuario duplicando letras","Porque hay retransmisiones por un fallo de red"],
+"¿Qué aporta SSH frente a Telnet?":["Cifra toda la sesión, incluida la contraseña","Usa el puerto 23 en lugar del puerto 22","Es más rápido porque no negocia nada","Permite conectarse sin usuario ni contraseña"],
+"¿Qué sigue siendo visible en una captura de SSH?":["El saludo TCP y las versiones del software","La contraseña del usuario, que va antes del cifrado","Los comandos que se escriben en la sesión","La salida de los comandos ejecutados"],
+"¿Para qué sirve la huella (fingerprint) que muestra SSH en la primera conexión?":["Para comprobar que te conectas al servidor correcto","Para cifrar la contraseña antes de enviarla","Para elegir el puerto por el que conectarse","Para crear el usuario en el servidor remoto"],
+"¿Qué hay que hacer al terminar la práctica de Telnet?":["Borrar las capturas con contraseñas y desactivar Telnet","Subir las capturas al repositorio como evidencia","Dejar Telnet activo para la siguiente práctica","Cambiar Telnet al puerto 22 para que sea seguro"],
+"¿Qué relación hay entre HTTP y TCP?":["HTTP es un protocolo de aplicación que viaja sobre TCP","TCP es un protocolo de aplicación que viaja sobre HTTP","HTTP y TCP son dos nombres del mismo protocolo","HTTP sustituye a TCP cuando se navega por la web"],
+"¿Qué significa GET / HTTP/1.1?":["Método GET, ruta raíz y versión 1.1","Código GET, servidor raíz y puerto 1.1","Método GET, host raíz y puerto 1.1","Versión GET, ruta raíz y código 1.1"],
+"¿Qué riesgo tiene HTTP sin cifrar, además de poder leerse?":["Que se puede modificar por el camino sin que se note","Que deja de funcionar en las redes Wi-Fi públicas","Que se pierden los códigos de estado de la respuesta","Que el puerto 80 se cierra solo tras unos minutos"],
+"¿Qué se ve en claro en una captura HTTPS?":["IP, puertos y versión de TLS","El método y la ruta pedida","Las cabeceras HTTP y cookies","El HTML de la página"],
+"¿Qué es el SNI?":["El nombre del servidor que el cliente indica al iniciar TLS","El número de serie del certificado que envía el servidor","Un algoritmo de cifrado simétrico usado tras el saludo","La firma de la autoridad que emitió el certificado"],
+"¿Qué es el handshake TLS?":["La negociación inicial de versión, algoritmos y claves","El saludo en tres pasos SYN, SYN-ACK y ACK de TCP","El cierre ordenado de la conexión con FIN y ACK","El envío de la petición GET y su respuesta"],
+"¿Qué es un certificado autofirmado?":["Uno firmado por su propio emisor","Uno firmado gratis por Let's Encrypt","Uno que no contiene clave pública","Uno que ya ha caducado"],
+"¿Cifra la conexión un certificado autofirmado?":["Sí, pero el cliente no puede confiar en el servidor","No, un certificado autofirmado nunca cifra","Solo cifra las cabeceras, no el contenido","Solo cifra si se usa HTTP/1.1"],
+"¿Por qué no se debe usar curl -k en producción?":["Porque no comprueba la identidad y podrían suplantar al servidor","Porque desactiva el cifrado y todo viaja en texto claro","Porque hace la conexión mucho más lenta que sin la opción","Porque no es compatible con servidores Nginx actuales"],
+"¿Qué significa «cifrado ≠ confianza»?":["Que puedes cifrar con un servidor en el que no confías","Que cifrar ya garantiza quién es el servidor","Que el certificado es el que cifra los datos","Que la confianza depende de lo rápido que se cifre"],
+"¿Qué es una CA (autoridad de certificación)?":["Una entidad que firma certificados en los que otros confían","Un programa que cifra el tráfico entre cliente y servidor","Un servidor web especializado en conexiones HTTPS","Un tipo de clave privada que usan los servidores"],
+"¿Qué es la cadena de confianza?":["Firmas enlazadas desde el certificado hasta una CA raíz","La lista de contraseñas guardadas en el navegador","El orden de las capas del modelo TCP/IP","La ruta de routers que sigue un paquete"],
+"¿Qué capas OSI agrupa la capa de aplicación de TCP/IP?":["Aplicación, presentación y sesión","Transporte, red y enlace","Enlace de datos y física","Sesión, transporte y red"],
+"¿Qué es la encapsulación?":["Que cada capa añade su cabecera a los datos de la superior","Que los datos se cifran antes de enviarlos por la red","Que los paquetes se comprimen para ocupar menos","Que la red se divide en subredes más pequeñas"],
+"¿Qué es la desencapsulación?":["Que cada capa del receptor quita su cabecera","Que cada capa del emisor añade su cabecera","Que el router cambia la IP de destino","Que el switch descifra la trama recibida"],
+"¿Para qué sirve el TTL de la cabecera IP?":["Para evitar que un paquete circule para siempre","Para indicar el puerto de destino del paquete","Para medir la velocidad de la conexión","Para indicar el tamaño de los datos del paquete"],
+"¿Qué es la MTU de Ethernet?":["El tamaño máximo de paquete que cabe en una trama","El tiempo de vida del paquete en la red","La velocidad máxima del enlace en Mbps","El número máximo de saltos de un paquete"],
+"¿Para qué sirve el FCS de una trama Ethernet?":["Para detectar si la trama se ha dañado","Para indicar la MAC de destino de la trama","Para cifrar la trama antes de enviarla","Para ordenar los paquetes que llegan"],
+"¿Para qué sirve ARP?":["Para averiguar la MAC que corresponde a una IP local","Para traducir un nombre de dominio a una dirección IP","Para asignar automáticamente una IP a cada equipo","Para cifrar las tramas antes de enviarlas al switch"],
+"¿Cómo se envía la pregunta ARP?":["En broadcast, a todos los equipos","Solo al router de la red","Solo al servidor de destino","Al servidor DNS configurado"],
+"Si el servidor está en otra red, ¿qué MAC de destino lleva la trama que sale del cliente?":["La del router (puerta de enlace)","La del servidor de destino","La de broadcast de la red","La del propio cliente"],
+"¿Qué modifica NAT en el router de salida?":["La IP de origen privada, que pasa a ser la pública","La IP de destino, que pasa a ser la del servidor real","El puerto de destino, que pasa del 80 al 443","El contenido HTTP, que pasa a ir cifrado"],
+"¿Cómo consigue TCP una entrega fiable?":["Con números de secuencia, confirmaciones y reenvíos","Enviando cada segmento dos veces por seguridad","Usando el TTL para detectar los paquetes perdidos","Cifrando los datos con TLS para que no se pierdan"],
+"¿Es una petición web un único paquete?":["No, intervienen muchas tramas","Sí, siempre es un único paquete","Sí, salvo cuando se usa HTTPS","No, son siempre exactamente dos"],
+"Con HTTPS, ¿siguen visibles las IP y los puertos?":["Sí, porque la red los necesita para entregar los datos","No, porque TLS cifra también las cabeceras IP y TCP","Solo la IP; los puertos van cifrados dentro de TLS","Solo los puertos; la IP va cifrada dentro de TLS"],
+"¿Qué significa la máscara /24 en 192.168.1.50/24?":["Que los 24 primeros bits identifican la red","Que en la red caben como máximo 24 equipos","Que el equipo usa el puerto 24","Que la dirección IP es pública"],
+"¿Qué es la puerta de enlace?":["El router por el que se sale a otras redes","El switch al que se conecta el equipo","El servidor DNS de la red local","El servidor web de destino"],
+"¿Cuál es el principal problema del cifrado simétrico?":["Hacer llegar la clave al otro extremo de forma segura","Que es demasiado lento para grandes volúmenes de datos","Que no permite cifrar ficheros de más de 1 GB","Que necesita siempre un certificado digital"],
+"¿En qué consiste el cifrado híbrido?":["Asimétrico para acordar la clave y simétrico para los datos","Simétrico para acordar la clave y asimétrico para los datos","Solo asimétrico durante toda la sesión","Dos claves simétricas, una en cada extremo"],
+"¿Para qué sirve Diffie-Hellman?":["Para acordar una clave común","Para firmar documentos PDF","Para calcular el hash de un fichero","Para cifrar el disco duro"],
+"¿Qué es una función hash?":["Una función que da un resumen de tamaño fijo de un dato","Un algoritmo de cifrado que se puede descifrar con clave","Un tipo de certificado digital emitido por una CA","Una clave privada que se usa para firmar documentos"],
+"¿Qué significa que una función hash sea determinista?":["Que el mismo dato da siempre el mismo hash","Que no se puede obtener el dato a partir del hash","Que el hash siempre tiene el mismo tamaño","Que es imposible que dos datos den el mismo hash"],
+"¿Qué garantiza una firma digital?":["Autenticidad, integridad y no repudio","Confidencialidad, integridad y anonimato","Disponibilidad, rapidez y confidencialidad","Confidencialidad, compresión y no repudio"],
+"¿Firmar un PDF lo cifra?":["No, se sigue leyendo con normalidad","Sí, con la clave privada del autor","Sí, con la clave pública del lector","Solo si se firma con AutoFirma"],
+"Al verificar una firma, los hashes no coinciden. ¿Qué significa?":["Que el documento se modificó o la clave no corresponde","Que la firma es válida pero el certificado no es fiable","Que el certificado ha caducado y hay que renovarlo","Que hay que repetir la verificación usando MD5"],
+"¿Qué problema resuelve el certificado digital?":["Saber de quién es realmente una clave pública","Hacer que el cifrado simétrico sea más rápido","Guardar la clave privada de forma oculta","Reducir el tamaño de los documentos firmados"],
+"¿Qué contiene un certificado digital?":["La identidad y la clave pública del titular, firmadas por una CA","La identidad y la clave privada del titular, firmadas por una CA","La contraseña del titular y su clave privada cifrada","El documento firmado junto con su hash SHA-256"],
+"¿Qué es la CA raíz?":["La autoridad de confianza preinstalada en el sistema","El certificado personal que usa el ciudadano","La clave privada principal de la FNMT","El servidor web que valida las firmas"],
+"¿Qué significa el aviso «firma no confiable»?":["Que no se confía en quien emitió el certificado","Que el documento se ha modificado tras firmarlo","Que la firma se calculó de forma incorrecta","Que el PDF está cifrado y no se puede leer"],
+"¿Qué contiene un fichero .p12 o .pfx?":["El certificado y la clave privada, con contraseña","Solo el certificado público del titular","Solo la clave pública, sin datos del titular","La lista de certificados revocados de la CA"],
+"¿Qué es AutoFirma?":["La aplicación oficial para firmar documentos","Una autoridad de certificación española","Un formato de certificado digital","Un algoritmo de hash seguro"]
+});
+Object.assign(FIX,{
+"¿Qué es una arquitectura web?":["La organización de los componentes de una aplicación y de cómo se comunican","El lenguaje de programación con el que se escribe el backend de la aplicación","El diseño visual de la interfaz y de la experiencia de usuario de la web","El conjunto de servidores físicos de un centro de datos y su cableado"],
+"¿En qué consiste implantar (desplegar) una aplicación?":["En conseguir que funcione correctamente en el entorno donde se va a usar","En escribir el código de la aplicación junto con sus pruebas unitarias","En diseñar la interfaz y la experiencia de usuario antes de programar","En compilar el código sin errores y subirlo a un repositorio de Git"],
+"Una app copiada al servidor falla con «Cannot find module 'express'». ¿Qué tipo de fallo es?":["De implantación: no se instalaron las dependencias","De programación: el código tiene un error de sintaxis","De red: el puerto de la aplicación está cerrado","De hardware: el servidor no tiene memoria suficiente"],
+"¿Qué componente ejecuta la lógica de negocio y expone la API?":["El servidor de aplicaciones","El servidor web estático","El servidor DNS","La red de distribución (CDN)"],
+"¿Para qué sirve un balanceador de carga?":["Para repartir el tráfico entre varios servidores","Para traducir los nombres de dominio a direcciones IP","Para guardar los datos de forma persistente","Para cifrar las conexiones entre cliente y servidor"],
+"¿Para qué sirve una CDN?":["Para servir copias de los recursos desde lugares cercanos al usuario","Para traducir los nombres de dominio a las direcciones IP del servidor","Para ejecutar la lógica de negocio de la aplicación en el backend","Para guardar los datos de los usuarios de forma persistente y segura"],
+"En la arquitectura de tres capas, ¿cuáles son las capas?":["Presentación, lógica de negocio y datos","Cliente, red local y servidor de aplicaciones","Frontend, API gateway y red de distribución","Aplicación, transporte y red de internet"],
+"¿Qué inconveniente tiene el modelo cliente + API?":["Hay que versionar la API y cuidar CORS y la autenticación","Un cambio pequeño obliga a desplegar toda la aplicación","La API no puede devolver datos en formato JSON","Solo puede usarse desde navegadores, no desde móviles"],
+"Tienda online con picos de tráfico en catálogo y pagos. ¿Qué modelo es más adecuado?":["Microservicios (o monolito modular)","Web estática servida desde una CDN","Monolito clásico en un solo servidor","Cliente + API sin servidor de backend"],
+"¿Qué ocurre primero al escribir una URL con https:// en el navegador?":["Una consulta DNS para obtener la IP","La negociación TLS con el servidor","El envío de la petición GET al servidor","La apertura de la conexión TCP en el 443"],
+"¿Qué indica la cabecera Content-Type?":["El tipo de contenido del cuerpo","El tamaño del cuerpo en bytes","El sitio que pide el cliente","Adónde hay que redirigir"],
+"¿Qué indica la cabecera Content-Length?":["El tamaño del cuerpo en bytes","El tipo de contenido del cuerpo","El tiempo que dura la caché","La versión de HTTP usada"],
+"En Nginx, ¿qué hace el proceso master?":["Lee la configuración y abre los puertos","Atiende directamente todas las conexiones","Ejecuta el código de la aplicación Node.js","Escribe cada petición en el log de acceso"],
+"En systemctl status nginx, ¿qué significa «enabled»?":["Que arrancará automáticamente con el sistema","Que está en marcha en este preciso momento","Que su configuración no tiene errores de sintaxis","Que el paquete está instalado en el sistema"],
+"¿Qué es un servidor de aplicaciones?":["El entorno donde se ejecuta el código del backend","Un servidor que solo entrega ficheros del disco","Un servidor que traduce nombres de dominio a IP","Un programa que gestiona la base de datos"],
+"¿Qué es Node.js?":["Un runtime que ejecuta JavaScript fuera del navegador","Un servidor web escrito en C, parecido a Nginx","Un framework de CSS para maquetar interfaces web","Un sistema gestor de bases de datos para JavaScript"],
+"¿Qué es npm?":["El gestor de paquetes de Node.js","Un servidor web para aplicaciones","Un framework para crear rutas","El runtime que ejecuta JavaScript"],
+"¿Qué servidor de aplicaciones se asocia a Python?":["Gunicorn o Uvicorn","Tomcat o WildFly","Kestrel o IIS","PHP-FPM o FastCGI"],
+"¿Dónde descarga npm install las librerías?":["En la carpeta node_modules","Dentro del fichero package.json","En la carpeta /etc/node/","En la carpeta /var/www/html"],
+"¿Qué implica que la app escuche en 127.0.0.1?":["Que solo acepta conexiones desde la propia máquina","Que acepta conexiones desde cualquier red externa","Que solo acepta conexiones a través de IPv6","Que acepta conexiones solo desde la red del aula"],
+"¿Qué significa que un servicio escuche en 0.0.0.0?":["Que escucha en todas las interfaces y es accesible desde fuera","Que solo acepta conexiones que vienen de la propia máquina","Que no está escuchando en ningún puerto en este momento","Que solo acepta conexiones que llegan a través de IPv6"],
+"¿Qué indica un 504 Gateway Timeout?":["La aplicación tarda demasiado en responder","La aplicación no está arrancada en el servidor","El recurso pedido no existe en el disco","Falta un punto y coma en la configuración"],
+"¿Qué es un registro de Docker, como Docker Hub?":["Un servidor que almacena imágenes","Un fichero con los logs de Docker","Un contenedor con permisos especiales","Un volumen compartido entre contenedores"],
+"¿Qué hace la opción -d en docker run?":["Ejecuta el contenedor en segundo plano","Borra el contenedor cuando se detiene","Activa el modo de depuración de Docker","Descarga la imagen sin llegar a ejecutarla"],
+"¿Qué comando comprueba si un servicio está en marcha?":["systemctl status","ss -lntp","nginx -t","curl -I"],
+"curl devuelve «Could not resolve host». ¿Qué ocurre?":["No se puede traducir el nombre a IP","Nada escucha en el puerto indicado","Un cortafuegos descarta los paquetes","La aplicación ha fallado al responder"],
+"Nginx responde 403 Forbidden. ¿Qué revisas?":["Los permisos de los ficheros o que falte el index.html","El DNS o el fichero /etc/hosts del equipo cliente","Que la aplicación Node.js esté arrancada y escuchando","El puerto que aparece en la directiva proxy_pass"],
+"¿Qué abre sudo ufw allow 'Nginx Full'?":["Los puertos 80 y 443","Solo el puerto 80","Solo el puerto 443","Los puertos 22 y 80"],
+"¿Qué identifica una dirección IP?":["Una interfaz de red","Un proceso del equipo","Un usuario del sistema","Un fichero compartido"],
+"¿Qué identifica un puerto?":["Un servicio o proceso dentro del equipo","El equipo dentro de la red local","La tarjeta de red física del equipo","El usuario que ha iniciado sesión"],
+"¿Qué tres paneles tiene Wireshark?":["Lista de paquetes, detalle por capas y bytes","Filtros, gráficos de tráfico y estadísticas","Cliente, servidor y red intermedia","Captura, exportación y ajustes de interfaz"],
+"¿Para qué sirve «Follow TCP Stream»?":["Para reconstruir la conversación de una conexión","Para cifrar la captura antes de guardarla en disco","Para cerrar la conexión TCP que está seleccionada","Para reenviar los paquetes capturados al servidor"],
+"¿Para qué sirve la huella (fingerprint) que muestra SSH en la primera conexión?":["Para comprobar que te conectas al servidor correcto","Para cifrar la contraseña antes de enviarla al servidor","Para elegir el puerto por el que se establece la conexión","Para crear el usuario en el servidor la primera vez"],
+"¿Qué hay que hacer al terminar la práctica de Telnet?":["Borrar las capturas con contraseñas y desactivar Telnet","Subir las capturas al repositorio como evidencia del trabajo","Dejar Telnet activo para usarlo en la siguiente práctica","Mover Telnet al puerto 22 para que pase a ser seguro"],
+"¿Qué NO se puede leer en una captura HTTPS?":["Las cabeceras y el contenido HTTP","Las IP de origen y de destino","Los puertos de origen y de destino","La versión de TLS negociada"],
+"¿Cifra la conexión un certificado autofirmado?":["Sí, pero el cliente no puede confiar en el servidor","No, un certificado autofirmado nunca cifra nada","Solo cifra las cabeceras, pero no el contenido","Solo cifra cuando se usa la versión HTTP/1.1"],
+"¿Qué hace curl -k?":["Continúa sin validar el certificado","Desactiva el cifrado de la conexión","Muestra solo las cabeceras de respuesta","Fuerza el uso de la versión HTTP/1.0"],
+"¿Por qué no se debe usar curl -k en producción?":["Porque no comprueba la identidad y podrían suplantar al servidor","Porque desactiva el cifrado y todo viaja en texto claro por la red","Porque hace que la conexión sea mucho más lenta de lo normal","Porque no es compatible con las versiones actuales de Nginx"],
+"¿Qué mostraría un navegador ante un certificado autofirmado?":["Un aviso de conexión no privada","La página normal, sin ningún aviso","Un error 404 de página no encontrada","Un error 502 de puerta de enlace"],
+"¿Qué capas OSI agrupa la capa de aplicación de TCP/IP?":["Aplicación, presentación y sesión","Transporte, red y enlace de datos","Enlace de datos y capa física","Sesión, transporte y red"],
+"¿Cuál es el orden de nombres al bajar por las capas?":["Datos → segmento → paquete → trama → bits","Datos → paquete → segmento → trama → bits","Bits → trama → paquete → segmento → datos","Datos → trama → paquete → segmento → bits"],
+"¿Quién asigna la dirección MAC?":["El fabricante de la tarjeta","El administrador de la red","El router de la red local","El servidor DHCP de la red"],
+"¿Qué es la MTU de Ethernet?":["El tamaño máximo de paquete que cabe en una trama","El tiempo de vida máximo de un paquete en la red","La velocidad máxima del enlace medida en Mbps","El número máximo de saltos que da un paquete"],
+"En la respuesta del servidor, ¿qué pasa con los puertos?":["Se intercambian origen y destino","Se mantienen igual que en la petición","Los dos pasan a ser el puerto 80","Desaparecen porque ya no hacen falta"],
+"En el cifrado asimétrico…":["se usa un par de claves: pública y privada","se usa una única clave compartida por ambos","no se usa ninguna clave, solo un hash","se usa la misma clave para cifrar y descifrar"],
+"¿Cuál es la principal desventaja del cifrado asimétrico?":["Es mucho más lento que el simétrico","No permite firmar documentos digitales","Obliga a compartir la clave privada","Se considera inseguro desde hace años"],
+"¿Qué significa «no repudio»?":["Que el firmante no puede negar haber firmado","Que el documento no se puede leer sin la clave","Que el certificado no caduca nunca","Que nadie puede copiar el documento firmado"],
+"¿Qué es la CA raíz?":["La autoridad de confianza preinstalada en el sistema","El certificado personal que usa cada ciudadano","La clave privada principal de cada usuario","El servidor web que valida las firmas en línea"],
+"¿Qué fichero contiene solo el certificado y se puede compartir?":[".crt",".key",".p12 o .pfx",".env o .ini"],
+"¿Qué hace try_files $uri $uri/ =404?":["Busca el fichero o la carpeta pedidos y, si no existen, da 404","Reenvía todas las peticiones a la aplicación Node.js del 3000","Devuelve siempre un error 404 para cualquier ruta solicitada","Escribe cada petición en el log y después devuelve un 404"]
+});
+(function(){
+"use strict";
+const TOPICS=[
+  {k:"arq",n:"Arquitecturas web",s:"UT1 · CE a"},
+  {k:"red",n:"Red y protocolo HTTP",s:"UT1 · CE b"},
+  {k:"srv",n:"Nginx y Node.js",s:"UT1 · CE c·d"},
+  {k:"vir",n:"VM, Docker y nube",s:"UT1 · CE e"},
+  {k:"app",n:"Estructura, configuración y requisitos",s:"UT1 · CE g·h"},
+  {k:"pru",n:"Pruebas, diagnóstico y seguridad",s:"UT1 · CE f·h·i"},
+  {k:"ssh",n:"Telnet, SSH y Wireshark",s:"Práctica 1"},
+  {k:"tls",n:"HTTP, HTTPS y TLS",s:"Práctica 2"},
+  {k:"paq",n:"El viaje de un paquete",s:"Modelo TCP/IP"},
+  {k:"cri",n:"Cifrado, firma y certificados",s:"Firma digital"}
+];
+const TMAP={}; TOPICS.forEach(t=>{TMAP[t.k]=t;});
+function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36);}
+const BANK=QB.map(r=>{
+  const id=hash(r[0]+r[1]), p=PATCH[id];
+  const o=(p?(p.length===4?p:[r[2][0]].concat(p)):r[2]).slice();
+  const p2=(typeof PATCH2!=="undefined")?PATCH2[id]:null;
+  if(p2)o[p2[0]]=p2[1];
+  const fx=(typeof FIX!=="undefined")?FIX[r[1]]:null;
+  return {id,t:r[0],q:r[1],o:fx?fx.slice():o,e:r[3]};
+});
+const BYID={}; BANK.forEach(b=>{BYID[b.id]=b;});
+const view=document.getElementById("view");
+const KEY="dpl-ut1-simulacro.v1";
+const ML={exam:"Simulacro",practice:"Práctica",review:"Repaso"};
+
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem(KEY)||"{}");
+    return {fallos:Array.isArray(s.fallos)?s.fallos.filter(id=>BYID[id]):[],hist:Array.isArray(s.hist)?s.hist:[],cfg:s.cfg||null};
+  }catch(e){return {fallos:[],hist:[],cfg:null};}
+}
+let store=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}}
+let cfg=Object.assign({mode:"exam",n:100,topics:TOPICS.map(t=>t.k)},store.cfg||{});
+cfg.topics=(cfg.topics||[]).filter(k=>TMAP[k]);
+if(![20,50,100,0].includes(cfg.n))cfg.n=100;
+if(cfg.mode==="review"&&!store.fallos.length)cfg.mode="exam";
+function saveCfg(){store.cfg=cfg;save();}
+
+let run=null, res=null, clockT=null;
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function inl(s){return esc(s).replace(/`([^`]+)`/g,"<code>$1</code>");}
+function fmt(s){
+  return s.split("```").map((p,i)=>{
+    if(i%2)return "<pre><code>"+esc(p.replace(/^\n/,"").replace(/\n$/,""))+"</code></pre>";
+    return inl(p.replace(/^\n/,"")).replace(/\n/g,"<br>");
+  }).join("");
+}
+const nf=new Intl.NumberFormat("es-ES",{maximumFractionDigits:2});
+function n2(x){return nf.format(Math.round(x*100)/100);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0");}
+function clockText(){return run?"tiempo "+fmtTime(Math.round((Date.now()-run.t0)/1000)):"";}
+function startClock(){stopClock();clockT=setInterval(()=>{const c=document.getElementById("clock");if(c&&run)c.textContent=clockText();},1000);}
+function stopClock(){if(clockT){clearInterval(clockT);clockT=null;}}
+function scrollTop(){try{window.scrollTo(0,0);}catch(e){}}
+function keepInView(){const r=view.getBoundingClientRect();if(r.top<0)window.scrollTo(0,window.scrollY+r.top-12);}
+
+function poolFor(mode){
+  const set=new Set(cfg.topics);
+  let p=BANK.filter(b=>set.has(b.t));
+  if(mode==="review"){const f=new Set(store.fallos);p=p.filter(b=>f.has(b.id));}
+  return p;
+}
+function tally(items){let a=0,f=0,bl=0;items.forEach(x=>{if(x.ans===0)a++;else if(x.ans===null)bl++;else f++;});return {a,f,bl};}
+function mark(id,ok){const s=new Set(store.fallos);if(ok)s.delete(id);else s.add(id);store.fallos=[...s];save();}
+
+/* ---------- home ---------- */
+function segOpt(val,title,sub,dis){
+  return `<input type="radio" name="mode" id="m-${val}" value="${val}" ${cfg.mode===val?"checked":""} ${dis?"disabled":""}><label for="m-${val}"><b>${title}</b><span>${sub}</span></label>`;
+}
+function chipN(n){return `<input type="radio" name="n" id="n-${n}" value="${n}" ${cfg.n===n?"checked":""}><label for="n-${n}">${n||"Todas"}</label>`;}
+function chipT(t,c){return `<input type="checkbox" name="topic" id="t-${t.k}" value="${t.k}" ${cfg.topics.includes(t.k)?"checked":""}><label for="t-${t.k}" title="${esc(t.s)}">${esc(t.n)} <small>${c}</small></label>`;}
+function startInfo(){
+  const pool=poolFor(cfg.mode);
+  const n=cfg.n===0?pool.length:Math.min(cfg.n,pool.length);
+  let hint;
+  if(!cfg.topics.length)hint="Elige al menos un tema.";
+  else if(cfg.mode==="review")hint=pool.length?`${pool.length} fallos guardados en estos temas.`:"No tienes fallos guardados en estos temas.";
+  else hint=`${pool.length} preguntas disponibles con esta selección.`;
+  return {n,hint};
+}
+function histHTML(){
+  if(!store.hist.length)return "";
+  return `<section class="panel"><p class="label">Tus últimos intentos</p><div class="hist">${store.hist.map(h=>{
+    const d=new Date(h.d);
+    return `<div><span>${d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"})} ${d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})}</span><span>${ML[h.m]||""} · ${h.n} preg.</span><span class="hint">${h.a} ✓ ${h.f} ✗ ${h.b} ○</span><span class="n ${h.nota>=5?"c-ok":"c-bad"}">${n2(h.nota)}</span></div>`;
+  }).join("")}</div><div class="actions" style="margin-top:6px"><button class="linkbtn" data-act="resetAll">Borrar historial y fallos guardados</button></div></section>`;
+}
+function renderHome(){
+  stopClock(); run=null;
+  const counts={}; BANK.forEach(b=>{counts[b.t]=(counts[b.t]||0)+1;});
+  const fallosN=store.fallos.length;
+  if(cfg.mode==="review"&&!fallosN)cfg.mode="exam";
+  const si=startInfo();
+  view.innerHTML=`
+  <div class="stack">
+    <section class="panel">
+      <p class="label">Cómo puntúa tu examen</p>
+      <div class="rule">
+        <div class="r-ok"><b>+1</b><span>acierto</span></div>
+        <div class="r-bad"><b>−⅓</b><span>fallo (3 fallos restan 1)</span></div>
+        <div class="r-bl"><b>0</b><span>en blanco</span></div>
+      </div>
+      <p class="ev">Con 4 opciones, contestar <strong>totalmente al azar</strong> te deja en 0 de media. Si descartas <strong>una</strong> opción, responder ya suma (+0,11 por pregunta); si dudas entre <strong>dos</strong>, +0,33. Si no puedes descartar ninguna, déjala en blanco.</p>
+    </section>
+    <section class="panel stack">
+      <div>
+        <p class="label">Modo</p>
+        <div class="seg">
+          ${segOpt("exam","Simulacro de examen","Corrección al final, como el real")}
+          ${segOpt("practice","Práctica","Corrección y explicación al momento")}
+          ${segOpt("review","Repasar fallos",fallosN?fallosN+" preguntas guardadas":"Aún no tienes fallos guardados",!fallosN)}
+        </div>
+      </div>
+      <div>
+        <p class="label">Número de preguntas</p>
+        <div class="chips">${[20,50,100,0].map(chipN).join("")}</div>
+      </div>
+      <div>
+        <div class="row" style="justify-content:space-between">
+          <p class="label" style="margin:0">Temas</p>
+          <span><button class="linkbtn" data-act="allT">Todos</button><button class="linkbtn" data-act="noneT">Ninguno</button></span>
+        </div>
+        <div class="chips" style="margin-top:8px">${TOPICS.map(t=>chipT(t,counts[t.k]||0)).join("")}</div>
+      </div>
+      <div class="row">
+        <button class="btn primary big" data-act="start" ${si.n?"":"disabled"}>${si.n?`Empezar · ${si.n} preguntas`:"Sin preguntas"}</button>
+        <span class="hint" id="poolHint">${si.hint}</span>
+      </div>
+      <p class="hint">Banco de ${BANK.length} preguntas sacadas de tus cinco documentos. En cada intento se eligen al azar y se barajan las opciones.</p>
+    </section>
+    ${histHTML()}
+  </div>`;
+}
+function updateStart(){
+  const si=startInfo();
+  const b=view.querySelector('[data-act="start"]'), h=document.getElementById("poolHint");
+  if(b){b.disabled=!si.n;b.textContent=si.n?`Empezar · ${si.n} preguntas`:"Sin preguntas";}
+  if(h)h.textContent=si.hint;
+}
+
+/* ---------- quiz ---------- */
+function newRun(mode,ids){
+  run={mode,items:ids.map(id=>({id,order:shuffle([0,1,2,3]),ans:null,done:false})),i:0,t0:Date.now(),confirm:null,mapOpen:false};
+  res=null; renderQuiz(); startClock(); scrollTop();
+}
+function start(){
+  const pool=poolFor(cfg.mode); if(!pool.length)return;
+  const n=cfg.n===0?pool.length:Math.min(cfg.n,pool.length);
+  newRun(cfg.mode,shuffle(pool.map(b=>b.id)).slice(0,n));
+}
+function renderQuiz(){
+  const it=run.items[run.i], b=BYID[it.id], N=run.items.length, practice=run.mode!=="exam", t=TMAP[b.t];
+  const answered=run.items.filter(x=>practice?x.done:x.ans!==null).length;
+  const locked=practice&&it.done, last=run.i===N-1, L="ABCD";
+  let net="";
+  if(practice){const s=tally(run.items.filter(x=>x.done));net=`<span class="net">netos ${n2(s.a-s.f/3)}</span>`;}
+  const opts=it.order.map((oi,pos)=>{
+    let c="opt";
+    if(locked)c+=oi===0?" is-ok":(it.ans===oi?" is-bad":" is-dim");
+    else if(it.ans===oi)c+=" is-sel";
+    return `<button class="${c}" data-act="pick" data-oi="${oi}" ${locked?"disabled":""} aria-pressed="${it.ans===oi}"><span class="key">${L[pos]}</span><span class="txt">${inl(b.o[oi])}</span></button>`;
+  }).join("");
+  let fb="";
+  if(locked){
+    if(it.ans===0)fb=`<div class="feedback ok"><b>Correcta · +1</b><p>${inl(b.e)}</p></div>`;
+    else if(it.ans===null)fb=`<div class="feedback bl"><b>En blanco · 0</b><p>La correcta era: <strong>${inl(b.o[0])}</strong>. ${inl(b.e)}</p></div>`;
+    else fb=`<div class="feedback bad"><b>Fallo · −⅓</b><p>La correcta era: <strong>${inl(b.o[0])}</strong>. ${inl(b.e)}</p></div>`;
+  }
+  let actions;
+  if(practice){
+    actions=locked?`<button class="btn primary" data-act="next">${last?"Ver resultado":"Siguiente →"}</button>`:`<button class="btn" data-act="skip">No la sé (en blanco)</button>`;
+    actions+=`<span class="spacer"></span><button class="btn ghost" data-act="askFinish">Terminar</button>`;
+  }else{
+    actions=`<button class="btn" data-act="prev" ${run.i===0?"disabled":""}>← Anterior</button>
+      <button class="btn" data-act="clear" ${it.ans===null?"disabled":""}>Dejar en blanco</button>
+      <button class="btn primary" data-act="next" ${last?"disabled":""}>Siguiente →</button>
+      <span class="spacer"></span><button class="btn warn" data-act="askFinish">Entregar</button>`;
+  }
+  let conf="";
+  if(run.confirm==="finish"){
+    const left=N-answered;
+    const msg=practice?`Se corregirán las ${answered} preguntas que has respondido.`:(left?`Te quedan <b>${left}</b> sin contestar; contarán como en blanco.`:"Has contestado todas.");
+    conf=`<div class="confirm"><p>${msg} ¿${practice?"Terminar":"Entregar"} ahora?</p><button class="btn warn" data-act="finish">${practice?"Terminar":"Entregar"}</button><button class="btn" data-act="cancel">Seguir</button></div>`;
+  }else if(run.confirm==="quit"){
+    conf=`<div class="confirm"><p>Si sales ahora, este intento no se guarda.</p><button class="btn warn" data-act="home">Salir</button><button class="btn" data-act="cancel">Seguir</button></div>`;
+  }
+  const map=practice?"":`<details class="map" ${run.mapOpen?"open":""}><summary>Mapa de preguntas · ${answered}/${N} contestadas</summary><div class="grid">${run.items.map((x,k)=>`<button data-act="go" data-k="${k}" class="${x.ans!==null?"done":""} ${k===run.i?"cur":""}" aria-label="Pregunta ${k+1}">${k+1}</button>`).join("")}</div></details>`;
+  view.innerHTML=`
+    <div class="status"><span class="prompt">$ pregunta ${run.i+1}/${N}</span><span class="ce" title="${esc(t.s)}">${esc(t.n)}</span><span id="clock">${clockText()}</span>${net}<span class="spacer"></span><button class="linkbtn" data-act="quit">Salir</button></div>
+    <div class="bar"><i style="width:${(answered/N*100).toFixed(1)}%"></i></div>
+    <article class="qcard">
+      <div class="qtext">${fmt(b.q)}</div>
+      <div class="opts">${opts}</div>
+      ${fb}
+      <div class="actions">${actions}</div>
+      ${conf}
+      <p class="keys">Teclado: A–D o 1–4 responder · ${practice?"Enter siguiente · 0 no la sé":"← → moverse · 0 dejar en blanco"}</p>
+    </article>
+    ${map}`;
+}
+function pick(oi){
+  const it=run.items[run.i];
+  if(run.mode==="exam"){it.ans=it.ans===oi?null:oi;renderQuiz();return;}
+  if(it.done)return;
+  it.ans=oi;it.done=true;mark(it.id,oi===0);renderQuiz();
+}
+function skip(){const it=run.items[run.i];if(it.done)return;it.ans=null;it.done=true;mark(it.id,false);renderQuiz();}
+function go(k){if(k<0||k>=run.items.length)return;run.i=k;run.confirm=null;renderQuiz();keepInView();}
+function next(){
+  if(run.mode!=="exam"&&!run.items[run.i].done)return;
+  if(run.i<run.items.length-1)go(run.i+1);
+  else if(run.mode!=="exam")finish();
+}
+
+/* ---------- results ---------- */
+function finish(){
+  stopClock();
+  const practice=run.mode!=="exam";
+  const items=practice?run.items.filter(x=>x.done):run.items;
+  if(!items.length){renderHome();scrollTop();return;}
+  if(!practice)items.forEach(x=>mark(x.id,x.ans===0));
+  const s=tally(items), N=items.length, net=s.a-s.f/3, nota=Math.max(0,net)/N*10;
+  const secs=Math.round((Date.now()-run.t0)/1000);
+  store.hist.unshift({d:Date.now(),m:run.mode,n:N,a:s.a,f:s.f,b:s.bl,nota:Math.round(nota*100)/100});
+  store.hist=store.hist.slice(0,8); save();
+  res={mode:run.mode,items,N,a:s.a,f:s.f,bl:s.bl,net,nota,secs,filter:"wrongbl",wrongIds:items.filter(x=>x.ans!==0).map(x=>x.id)};
+  run=null; renderResults(); scrollTop();
+}
+function reviewItem(x,k){
+  const b=BYID[x.id], kind=x.ans===0?"ok":x.ans===null?"bl":"bad";
+  const tag={ok:"Acierto +1",bad:"Fallo −⅓",bl:"En blanco 0"}[kind];
+  return `<article class="rv k-${kind}">
+    <div class="rv-h"><span>#${k+1}</span><span>${esc(TMAP[b.t].n)}</span><span class="tag">${tag}</span></div>
+    <div class="rv-q">${fmt(b.q)}</div>
+    <div class="rv-a">${kind==="bad"?`<span class="mine">✗ Tu respuesta: ${inl(b.o[x.ans])}</span>`:""}${kind==="bl"?`<span class="c-bl">○ Sin responder</span>`:""}<span class="right">✓ Correcta: ${inl(b.o[0])}</span></div>
+    <p class="rv-e">${inl(b.e)}</p>
+  </article>`;
+}
+function renderResults(){
+  const pass=res.nota>=5, f=res.filter;
+  const per={};
+  res.items.forEach(x=>{const t=BYID[x.id].t;const p=per[t]||(per[t]={a:0,f:0,bl:0,n:0});p.n++;if(x.ans===0)p.a++;else if(x.ans===null)p.bl++;else p.f++;});
+  const rows=TOPICS.filter(t=>per[t.k]).map(t=>{
+    const p=per[t.k], w=v=>(v/p.n*100).toFixed(1)+"%";
+    return `<tr><td>${esc(t.n)}<br><small class="hint">${esc(t.s)}</small></td><td class="num"><span class="c-ok">${p.a}</span> · <span class="c-bad">${p.f}</span> · <span class="c-bl">${p.bl}</span></td><td class="num">${n2(p.a-p.f/3)} / ${p.n}</td><td style="width:32%"><div class="tbar" role="img" aria-label="${p.a} aciertos, ${p.f} fallos, ${p.bl} en blanco"><i class="o" style="width:${w(p.a)}"></i><i class="b" style="width:${w(p.f)}"></i><i class="w" style="width:${w(p.bl)}"></i></div></td></tr>`;
+  }).join("");
+  const keep=x=>f==="all"?true:f==="wrong"?(x.ans!==null&&x.ans!==0):f==="blank"?x.ans===null:x.ans!==0;
+  const list=res.items.map((x,k)=>({x,k})).filter(o=>keep(o.x)).map(o=>reviewItem(o.x,o.k)).join("")||`<p class="empty">Nada que mostrar con este filtro.</p>`;
+  const fb=(v,l)=>`<button data-act="filter" data-f="${v}" aria-pressed="${f===v}">${l}</button>`;
+  const ifBlank=res.f?`Si hubieras dejado en blanco los fallos, tendrías un ${n2(res.a/res.N*10)}.`:"";
+  view.innerHTML=`
+  <div class="stack">
+    <section class="panel stack">
+      <div class="score">
+        <div class="nota">${n2(res.nota)}<small> /10</small></div>
+        <div class="stack" style="gap:6px">
+          <span><span class="verdict ${pass?"pass":"fail"}">${pass?"HTTP/1.1 200 OK · aprobado":"HTTP/1.1 503 · aún no está preparado"}</span></span>
+          <div class="tally"><span><b class="c-ok">${res.a}</b> aciertos</span><span><b class="c-bad">${res.f}</b> fallos <small class="hint">(−${n2(res.f/3)})</small></span><span><b class="c-bl">${res.bl}</b> en blanco</span></div>
+          <p class="hint">Puntos netos ${n2(res.net)} de ${res.N} · ${fmtTime(res.secs)} · ${ML[res.mode]}. ${ifBlank}</p>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:0">${res.wrongIds.length?`<button class="btn primary" data-act="retryWrong">Repasar estos ${res.wrongIds.length} fallos y blancos</button>`:""}<button class="btn" data-act="home">Nuevo intento</button></div>
+    </section>
+    <section class="panel stack">
+      <h2>Por tema</h2>
+      <div class="tablewrap"><table class="topics"><thead><tr><th>Tema</th><th style="text-align:right">✓ · ✗ · ○</th><th style="text-align:right">Netos</th><th>Reparto</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </section>
+    <section class="stack">
+      <div class="row" style="justify-content:space-between"><h2>Revisión</h2><div class="filters">${fb("wrongbl","Fallos y blancos")}${fb("wrong","Solo fallos")}${fb("blank","En blanco")}${fb("all","Todas")}</div></div>
+      ${list}
+    </section>
+  </div>`;
+}
+
+/* ---------- events ---------- */
+view.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]"); if(!el||!view.contains(el))return;
+  const act=el.dataset.act;
+  switch(act){
+    case "start":start();break;
+    case "allT":cfg.topics=TOPICS.map(t=>t.k);saveCfg();renderHome();break;
+    case "noneT":cfg.topics=[];saveCfg();renderHome();break;
+    case "resetAll":
+      if(!el.dataset.arm){el.dataset.arm="1";el.textContent="Pulsa otra vez para borrarlo todo";}
+      else{store={fallos:[],hist:[],cfg:cfg};save();renderHome();}
+      break;
+    case "pick":pick(+el.dataset.oi);break;
+    case "skip":skip();break;
+    case "next":next();break;
+    case "prev":go(run.i-1);break;
+    case "go":go(+el.dataset.k);break;
+    case "clear":run.items[run.i].ans=null;renderQuiz();break;
+    case "askFinish":run.confirm="finish";renderQuiz();break;
+    case "quit":run.confirm="quit";renderQuiz();break;
+    case "cancel":run.confirm=null;renderQuiz();break;
+    case "finish":finish();break;
+    case "home":renderHome();scrollTop();break;
+    case "filter":res.filter=el.dataset.f;renderResults();break;
+    case "retryWrong":newRun("review",shuffle(res.wrongIds.slice()));break;
+  }
+});
+view.addEventListener("change",e=>{
+  const t=e.target; if(!t.name)return;
+  if(t.name==="mode")cfg.mode=t.value;
+  else if(t.name==="n")cfg.n=+t.value;
+  else if(t.name==="topic"){const s=new Set(cfg.topics);if(t.checked)s.add(t.value);else s.delete(t.value);cfg.topics=TOPICS.map(x=>x.k).filter(k=>s.has(k));}
+  saveCfg(); updateStart();
+});
+view.addEventListener("toggle",e=>{if(run&&e.target.matches&&e.target.matches("details.map"))run.mapOpen=e.target.open;},true);
+document.addEventListener("keydown",e=>{
+  if(!run||e.metaKey||e.ctrlKey||e.altKey)return;
+  const tag=(e.target.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="select"||tag==="textarea")return;
+  const k=(e.key||"").toLowerCase();
+  if(k.length===1){
+    let idx="abcd".indexOf(k); if(idx<0)idx="1234".indexOf(k);
+    if(idx>=0){pick(run.items[run.i].order[idx]);e.preventDefault();return;}
+    if(k==="0"){if(run.mode==="exam"){run.items[run.i].ans=null;renderQuiz();}else skip();e.preventDefault();return;}
+  }
+  if(k==="arrowright"){if(run.mode==="exam")go(run.i+1);else next();e.preventDefault();}
+  else if(k==="arrowleft"&&run.mode==="exam"){go(run.i-1);e.preventDefault();}
+  else if(k==="enter"){if(e.target.closest&&e.target.closest("button,summary"))return;next();e.preventDefault();}
+});
+
+renderHome();
+})();
+</script>
+
+</body>
+</html>
