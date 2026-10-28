@@ -1,5 +1,7 @@
 # Simulacro DPL · UT1
 
+## ▶ [Abrir el test](https://jaimegdaw.github.io/simulacro-dpl-ut1/)
+
 Test interactivo para preparar el examen de **Despliegue de Aplicaciones Web** (2.º CFGS DAW).
 
 **300 preguntas** teórico-prácticas sobre:
@@ -24,4 +26,4 @@ Igual que el examen: **+1** acierto · **−⅓** fallo (3 fallos restan 1) · *
 
 ## Uso
 
-Abre `index.html` en el navegador. No necesita instalación ni servidor: es una única página HTML.
+Pulsa **[Abrir el test](https://jaimegdaw.github.io/simulacro-dpl-ut1/)** o abre `index.html` descargado en el navegador. No necesita instalación ni servidor: es una única página HTML.
